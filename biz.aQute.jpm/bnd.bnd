@@ -1,3 +1,7 @@
+javac.source 			= 1.6
+javac.target 			= 1.6
+javac.ee				= '[1.6,1.7)'
+
 -sources: false
 
 Bundle-License: 				http://www.opensource.org/licenses/apache2.0.php; \
