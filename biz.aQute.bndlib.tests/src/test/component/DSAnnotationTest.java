@@ -64,13 +64,7 @@ public class DSAnnotationTest extends BndTestCase {
 
 	/**
 	 * The basic test. This test will take an all default component and a
-<<<<<<< HEAD
-	 * component that has all values set. It looks like the xml tester needs a namspace, so we set one.
-||||||| parent of 4d94861... fix more tests to reflect slightly changed behavior. still one mysterious error
-	 * component that has all values set.
-=======
 	 * component that has all values set.  It looks like the sml tester needs a namspace, so we set one.
->>>>>>> 4d94861... fix more tests to reflect slightly changed behavior. still one mysterious error
 	 */
 	@Component(xmlns = "http://www.osgi.org/xmlns/scr/v1.1.0")
 	public static class Defaults_basic implements Serializable, Runnable {
@@ -438,11 +432,7 @@ public class DSAnnotationTest extends BndTestCase {
 		xt.assertAttribute("PrivateLogService", "scr:component/reference[2]/@name");
 		xt.assertAttribute("setPrivateLogService", "scr:component/reference[2]/@bind");
 		xt.assertAttribute("unsetPrivateLogService", "scr:component/reference[2]/@unbind");
-		xt.assertAttribute("", "scr:component/reference[2]/@updated"); // is
-																		// private
-																		// in
-																		// super
-																		// class
+		xt.assertAttribute("", "scr:component/reference[2]/@updated"); // is private in super class
 
 	}
 
