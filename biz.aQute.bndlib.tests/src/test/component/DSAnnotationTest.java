@@ -11,6 +11,7 @@ import org.osgi.service.component.*;
 import org.osgi.service.component.annotations.*;
 import org.osgi.service.log.*;
 
+import aQute.bnd.annotation.xml.*;
 import aQute.bnd.component.*;
 import aQute.bnd.osgi.*;
 import aQute.bnd.test.*;
@@ -2034,5 +2035,45 @@ public class DSAnnotationTest extends BndTestCase {
 		xt.assertAttribute("String", "scr:component/property[@name='two']/@type");
 	}
 
+	@Component()
+	@Attribute(namespace="org.apache.felix.scr", prefix="felix", attributes="factoryType=custom")
+	@Attributes({@Attribute(namespace="org.apache.felix.scr.ext", prefix="felix2", attributes="foo=bar")})
+	public static class ExtraAttrbutes implements Serializable, Runnable {
+		private static final long	serialVersionUID	= 1L;
+		@Activate
+		void activate(@SuppressWarnings("unused")ComponentContext cc, @SuppressWarnings("unused")ConfigA a,  @SuppressWarnings("unused")ConfigB b) {}
+		@Deactivate
+		void deactivate(@SuppressWarnings("unused")ComponentContext cc) {}
+		@Modified
+		void modified(@SuppressWarnings("unused")ComponentContext cc) {}
+		@Override
+		public void run() {}
+	}
+	
+	public static void testExtraAttrbutes() throws Exception {
+		Builder b = new Builder();
+		b.setProperty("-dsannotations", "test.component.DSAnnotationTest$ExtraAttrbutes*");
+		b.setProperty("-dsannotations-extensions", BndExtensionReader.class.getName());
+		b.setProperty("Private-Package", "test.component");
+		b.addClasspath(new File("bin"));
+
+		Jar jar = b.build();
+		assertOk(b);
+
+		String name = ExtraAttrbutes.class.getName();
+		Resource r = jar.getResource("OSGI-INF/" + name + ".xml");
+		System.err.println(Processor.join(jar.getResources().keySet(), "\n"));
+		assertNotNull(r);
+		r.write(System.err);
+		XmlTester xt = new XmlTester(r.openInputStream(), "scr","http://www.osgi.org/xmlns/scr/v1.3.0", "felix", "org.apache.felix.scr", "felix2", "org.apache.felix.scr.ext"); 
+		// Test the defaults
+		xt.assertAttribute(name, "scr:component/implementation/@class");
+
+		// Default must be the implementation class
+		xt.assertAttribute(name, "scr:component/@name");
+
+		xt.assertAttribute("custom", "scr:component/@felix:factoryType");
+		xt.assertAttribute("bar", "scr:component/@felix2:foo");
+	}
 
 }

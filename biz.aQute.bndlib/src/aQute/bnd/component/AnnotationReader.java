@@ -79,18 +79,20 @@ public class AnnotationReader extends ClassDataCollector {
 	boolean						baseclass				= true;
 	
 	final boolean						felixExtensions;
+	List<ExtensionReader> extensions;
 
-	AnnotationReader(Analyzer analyzer, Clazz clazz, boolean inherit, boolean felixExtensions) {
+	AnnotationReader(Analyzer analyzer, Clazz clazz, boolean inherit, boolean felixExtensions, List<ExtensionReader> extensions) {
 		this.analyzer = analyzer;
 		this.clazz = clazz;
 		this.inherit = inherit;
 		this.felixExtensions = felixExtensions;
+		this.extensions = extensions;
 	}
 
-	public static ComponentDef getDefinition(Clazz c, Analyzer analyzer) throws Exception {
+	public static ComponentDef getDefinition(Clazz c, Analyzer analyzer, List<ExtensionReader> extensions) throws Exception {
 		boolean inherit = Processor.isTrue(analyzer.getProperty("-dsannotations-inherit"));
 		boolean felixExtensions = Processor.isTrue(analyzer.getProperty("-ds-felix-extensions"));
-		AnnotationReader r = new AnnotationReader(analyzer, c, inherit, felixExtensions);
+		AnnotationReader r = new AnnotationReader(analyzer, c, inherit, felixExtensions, extensions);
 		return r.getDef();
 	}
 
@@ -181,6 +183,11 @@ public class AnnotationReader extends ClassDataCollector {
 				doModified();
 			else if (a instanceof Reference)
 				doReference((Reference) a, annotation);
+			else {
+				for (ExtensionReader extensionReader: extensions) {
+					extensionReader.doAnnotation(a, annotation, component, analyzer);
+				}
+			}
 		}
 		catch (Exception e) {
 			e.printStackTrace();
