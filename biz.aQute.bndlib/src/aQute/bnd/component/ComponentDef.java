@@ -2,9 +2,11 @@ package aQute.bnd.component;
 
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.regex.*;
 
 import org.osgi.service.component.annotations.*;
 
+import aQute.bnd.annotation.xml.*;
 import aQute.bnd.osgi.*;
 import aQute.bnd.osgi.Descriptors.TypeRef;
 import aQute.bnd.version.*;
@@ -19,12 +21,14 @@ import aQute.lib.tag.*;
  * hold the references.
  */
 class ComponentDef {
+
 	final static String				NAMESPACE_STEM	= "http://www.osgi.org/xmlns/scr";
 	final static String 			MARKER 			= new String("|marker");
 	final List<String>				properties		= new ArrayList<String>();
 	final MultiMap<String,String>	property		= new MultiMap<String,String>(); //key is property name
 	final Map<String, String>		propertyType	= new HashMap<String, String>();
 	final Map<String,ReferenceDef>	references		= new LinkedHashMap<String,ReferenceDef>();
+	final Map<String, String>		attributes		= new HashMap<String, String>();
 
 	Version							version			= AnnotationReader.V1_0;
 	String							name;
@@ -136,6 +140,10 @@ class ComponentDef {
 		Tag component = new Tag(xmlns == null? "component": "scr:component");
 		if (xmlns != null)
 			component.addAttribute("xmlns:scr", xmlns);
+		
+		for (Map.Entry<String, String> a: attributes.entrySet()) {
+			component.addAttribute(a.getKey(), a.getValue());
+		}
 
 		component.addAttribute("name", name);
 

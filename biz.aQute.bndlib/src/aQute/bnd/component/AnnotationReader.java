@@ -6,6 +6,7 @@ import java.util.regex.*;
 
 import org.osgi.service.component.annotations.*;
 
+import aQute.bnd.annotation.xml.*;
 import aQute.bnd.component.error.*;
 import aQute.bnd.component.error.DeclarativeServicesAnnotationError.*;
 import aQute.bnd.osgi.*;
@@ -65,6 +66,9 @@ public class AnnotationReader extends ClassDataCollector {
 																.compile("\\(((Lorg/osgi/service/component/ComponentContext;)|(Lorg/osgi/framework/BundleContext;)|(Ljava/util/Map;)|(Ljava/lang/Integer;)|(I))*\\)(V|(Ljava/util/Map;))");
 	static Pattern				DEACTIVATEDESCRIPTORDS13	= Pattern
 																.compile("\\(((L([^;]+);)|(I))*\\)(V|(Ljava/util/Map;))");
+
+	final static Pattern		ATTRIBUTE_PATTERN			= Pattern
+																.compile("\\s*([^=\\s:]+)\\s*=(.*)");
 
 	ComponentDef				component				= new ComponentDef();
 
@@ -181,10 +185,28 @@ public class AnnotationReader extends ClassDataCollector {
 				doModified();
 			else if (a instanceof Reference)
 				doReference((Reference) a, annotation);
+			else if (a instanceof Attribute)
+				doAttribute((Attribute) a);
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 			analyzer.error("During generation of a component on class %s, exception %s", clazz, e);
+		}
+	}
+
+	private void doAttribute(Attribute a) {
+		String namespace = a.namespace();
+		String prefix = a.prefix();
+		component.attributes.put("xmlns:" + prefix, namespace);
+		for (String attribute: a.attributes()) {
+			Matcher m = ATTRIBUTE_PATTERN.matcher(attribute);
+			if (m.matches()) {
+				String key = m.group(1);
+				String value = m.group(2).trim();
+				component.attributes.put(prefix + ":" + key, value);
+			} else {
+				analyzer.error("Malformed attribute %s", attribute);
+			}
 		}
 	}
 
