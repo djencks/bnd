@@ -1128,7 +1128,7 @@ public class Analyzer extends Processor {
 		return getBndInfo("version", "<unknown>");
 	}
 
-	static SimpleDateFormat	df	= new SimpleDateFormat("EEE MMM dd hh:mm:ss z yyyy");
+	static SimpleDateFormat	df	= new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US);
 
 	public long getBndLastModified() {
 		String time = getBndInfo("lastmodified", "0");
@@ -1136,9 +1136,11 @@ public class Analyzer extends Processor {
 			return Long.parseLong(time);
 
 		try {
-			Date parse = df.parse(time);
-			if (parse != null)
-				return parse.getTime();
+			synchronized (df) {
+				Date parse = df.parse(time);
+				if (parse != null)
+					return parse.getTime();
+			}
 		}
 		catch (ParseException e) {
 			// Ignore
