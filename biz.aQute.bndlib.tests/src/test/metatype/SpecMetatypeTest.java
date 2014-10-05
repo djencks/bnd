@@ -86,7 +86,7 @@ public class SpecMetatypeTest extends TestCase {
 
 		String a$$(); // a$
 
-		String a$$$(); // a$
+		String b$$$(); // b$
 
 		String a$$$$(); // a$$
 
@@ -133,7 +133,7 @@ public class SpecMetatypeTest extends TestCase {
 		String xa$$(); // a$
 
 		@AttributeDefinition(name = "a$")
-		String xa$$$(); // a$
+		String xb$$$(); // b$
 
 		@AttributeDefinition(name = "a$$")
 		String xa$$$$(); // a$$
@@ -163,6 +163,7 @@ public class SpecMetatypeTest extends TestCase {
 		b.setProperty("Export-Package", "test.metatype");
 		b.setProperty("-metatypeannotations", Naming.class.getName());
 		b.build();
+		System.out.println(b.getErrors());
 		assertEquals(0, b.getErrors().size());
 		System.out.println(b.getWarnings());
 		assertEquals(0, b.getWarnings().size());
@@ -184,6 +185,7 @@ public class SpecMetatypeTest extends TestCase {
 		assertAD(d, "$$$$a.b", "A b");
 		assertAD(d, "a", "A ");
 		assertAD(d, "a$", "A ");
+		assertAD(d, "b$", "B ");
 		assertAD(d, "a$$", "A ");
 		assertAD(d, "a$.$", "A ");
 		assertAD(d, "a$_$", "A ");
@@ -200,6 +202,7 @@ public class SpecMetatypeTest extends TestCase {
 		assertAD(d, "x$$$$a.b", "$$$$a.b");
 		assertAD(d, "xa", "a");
 		assertAD(d, "xa$", "a$");
+		assertAD(d, "xb$", "a$");
 		assertAD(d, "xa$$", "a$$");
 		assertAD(d, "xa$.$", "a$.$");
 		assertAD(d, "xa$_$", "a$_$");
@@ -207,7 +210,87 @@ public class SpecMetatypeTest extends TestCase {
 		assertAD(d, "noid", "Noid");
 		assertAD(d, "nullid", "§NULL§");
 	}
+	
+	@ObjectClassDefinition
+	public static interface ADCollision {
 
+		String a$$(); // a$
+
+		String a$$$(); // a$
+	}
+	
+	public static void testADCollision() throws Exception {
+		Builder b = new Builder();
+		b.addClasspath(new File("bin"));
+		b.setProperty("Export-Package", "test.metatype");
+		b.setProperty("-metatypeannotations", ADCollision.class.getName());
+		b.build();
+		System.out.println(b.getErrors());
+		assertEquals(1, b.getErrors().size());
+	}
+	
+	@ObjectClassDefinition(id="duplicate")
+	public static interface DupOCDId1 {
+		
+	}
+
+	@ObjectClassDefinition(id="duplicate")
+	public static interface DupOCDId2 {
+		
+	}
+
+	public static void testOCDCollision() throws Exception {
+		Builder b = new Builder();
+		b.addClasspath(new File("bin"));
+		b.setProperty("Export-Package", "test.metatype");
+		String name = DupOCDId2.class.getName();
+		
+		b.setProperty("-metatypeannotations", name.substring(0, name.length() - "1".length()) + "*");
+		b.build();
+		assertEquals(1, b.getErrors().size());
+	}
+	
+	@ObjectClassDefinition(pid={"1"})
+	public static interface DupPid1 {
+		
+	}
+	@ObjectClassDefinition(pid={"1"})
+	public static interface DupPid2 {
+		
+	}
+	@ObjectClassDefinition(factoryPid={"2"})
+	public static interface DupPid3 {
+		
+	}
+	@ObjectClassDefinition(factoryPid={"2"})
+	public static interface DupPid4 {
+		
+	}
+	@ObjectClassDefinition(pid={"3"}, factoryPid={"3"})
+	public static interface DupPid5 {
+		
+	}
+	@ObjectClassDefinition(pid={"4"})
+	public static interface DupPid6 {
+		
+	}
+	@ObjectClassDefinition(factoryPid={"4"})
+	public static interface DupPid7 {
+		
+	}
+
+	public static void testPidCollision() throws Exception {
+		Builder b = new Builder();
+		b.addClasspath(new File("bin"));
+		b.setProperty("Export-Package", "test.metatype");
+		String name = DupPid2.class.getName();
+		
+		b.setProperty("-metatypeannotations", name.substring(0, name.length() - "1".length()) + "*");
+		b.build();
+		System.err.println(b.getErrors());
+		assertEquals(4, b.getErrors().size());
+	}
+	
 	/**
 	 * Test the special conversions.
 	 */
@@ -216,11 +299,154 @@ public class SpecMetatypeTest extends TestCase {
 		private static final long	serialVersionUID	= 1L;
 
 		public MyList() {
-			System.err.println("Constr");
-
 		}
+		
 	}
+	
+	interface L<T> extends List<T> {}
+	
+	public static class StringList<T> implements L<T> {
 
+		@Override
+		public void add(int arg0, T arg1) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public boolean addAll(int arg0, Collection< ? extends T> arg1) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public T get(int arg0) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public int indexOf(Object arg0) {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public int lastIndexOf(Object arg0) {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public ListIterator<T> listIterator() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public ListIterator<T> listIterator(int arg0) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public T remove(int arg0) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public T set(int arg0, T arg1) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public List<T> subList(int arg0, int arg1) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public boolean add(T arg0) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public boolean addAll(Collection< ? extends T> arg0) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void clear() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public boolean contains(Object arg0) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public boolean containsAll(Collection< ? > arg0) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public boolean isEmpty() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public Iterator<T> iterator() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public boolean remove(Object arg0) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public boolean removeAll(Collection< ? > arg0) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public boolean retainAll(Collection< ? > arg0) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public int size() {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+
+		@Override
+		public Object[] toArray() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public <T> T[] toArray(T[] arg0) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+    }
+
+	@ObjectClassDefinition
 	static interface CollectionsTest {
 		Collection<String> collection();
 
@@ -228,10 +454,10 @@ public class SpecMetatypeTest extends TestCase {
 
 		Set<String> set();
 
-		Queue<String> queue();
+//		Queue<String> queue();
 
 		// Deque<String> deque();
-		Stack<String> stack();
+//		Stack<String> stack();
 
 		ArrayList<String> arrayList();
 
@@ -240,79 +466,36 @@ public class SpecMetatypeTest extends TestCase {
 		LinkedHashSet<String> linkedHashSet();
 
 		MyList<String> myList();
+		
+		StringList<String> stringList();
 	}
 
-	public static void xtestCollections() throws Exception {
-//		CollectionsTest trt = set(CollectionsTest.class, new int[] {
-//				1, 2, 3
-//		});
-//		List<String> source = Arrays.asList("1", "2", "3");
-//
-//		assertTrue(trt.collection() instanceof Collection);
-//		assertEqualList(source, trt.collection());
-//
-//		assertTrue(trt.list() instanceof List);
-//		assertEqualList(source, trt.list());
-//		assertTrue(trt.set() instanceof Set);
-//		assertEqualList(source, trt.set());
-//		assertTrue(trt.queue() instanceof Queue);
-//		assertEqualList(source, trt.queue());
-//		// assertTrue( trt.deque() instanceof Deque);
-//		// assertEqualList( source, trt.deque());
-//		assertTrue(trt.stack() instanceof Stack);
-//		assertEqualList(source, trt.stack());
-//		assertTrue(trt.arrayList() instanceof ArrayList);
-//		assertEqualList(source, trt.arrayList());
-//		assertTrue(trt.linkedList() instanceof LinkedList);
-//		assertEqualList(source, trt.linkedList());
-//		assertTrue(trt.linkedHashSet() instanceof LinkedHashSet);
-//		assertEqualList(source, trt.linkedHashSet());
-//		assertTrue(trt.myList() instanceof MyList);
-//		assertEqualList(source, trt.myList());
+	public static void testCollections() throws Exception {
+		Builder b = new Builder();
+		b.addClasspath(new File("bin"));
+		b.setProperty("Export-Package", "test.metatype");
+		b.setProperty("-metatypeannotations", CollectionsTest.class.getName());
+		b.build();
+		System.out.println(b.getErrors());
+		assertEquals(0, b.getErrors().size());
+		assertEquals(0, b.getWarnings().size());
+
+		System.err.println(b.getJar().getResources());
+		Resource r = b.getJar().getResource("OSGI-INF/metatype/test.metatype.SpecMetatypeTest$CollectionsTest.xml");
+		assertNotNull(r);
+        IO.copy(r.openInputStream(), System.err);
+
+		Document d = db.parse(r.openInputStream());
+		assertEquals("http://www.osgi.org/xmlns/metatype/v1.3.0", d.getDocumentElement().getNamespaceURI());
+		assertEquals("-2147483648", xpath.evaluate("//OCD/AD[@id='collection']/@cardinality", d));
+		assertEquals("-2147483648", xpath.evaluate("//OCD/AD[@id='list']/@cardinality", d));
+		assertEquals("-2147483648", xpath.evaluate("//OCD/AD[@id='set']/@cardinality", d));
+		assertEquals("-2147483648", xpath.evaluate("//OCD/AD[@id='arrayList']/@cardinality", d));
+		assertEquals("-2147483648", xpath.evaluate("//OCD/AD[@id='linkedList']/@cardinality", d));
+		assertEquals("-2147483648", xpath.evaluate("//OCD/AD[@id='linkedHashSet']/@cardinality", d));
+		assertEquals("-2147483648", xpath.evaluate("//OCD/AD[@id='myList']/@cardinality", d));
+		assertEquals("-2147483648", xpath.evaluate("//OCD/AD[@id='stringList']/@cardinality", d));
 	}
-
-	private static void assertEqualList(List< ? > a, Collection< ? > b) {
-		if (a.size() == b.size()) {
-			for (Object x : a) {
-				if (!b.contains(x))
-					throw new AssertionFailedError("expected:<" + a + "> but was: <" + b + ">");
-			}
-			return;
-		}
-		throw new AssertionFailedError("expected:<" + a + "> but was: <" + b + ">");
-	}
-
-	/**
-	 * Test the special conversions.
-	 */
-	static interface SpecialConversions {
-		enum X {
-			A, B, C
-		}
-
-		X enumv();
-
-		Pattern pattern();
-
-		Class< ? > clazz();
-
-		URI constructor();
-	}
-
-	public static void xtestSpecialConversions() throws URISyntaxException {
-//		Properties p = new Properties();
-//		p.put("enumv", "A");
-//		p.put("pattern", ".*");
-//		p.put("clazz", "java.lang.Object");
-//		p.put("constructor", "http://www.aQute.biz");
-//
-//		SpecialConversions trt = Configurable.createConfigurable(SpecialConversions.class, (Map<Object,Object>) p);
-//		assertEquals(SpecialConversions.X.A, trt.enumv());
-//		assertEquals(".*", trt.pattern().pattern());
-//		assertEquals(Object.class, trt.clazz());
-//		assertEquals(new URI("http://www.aQute.biz"), trt.constructor());
-	}
-
 
 	/**
 	 * Test enum handling
@@ -342,6 +525,7 @@ public class SpecMetatypeTest extends TestCase {
 		b.setProperty("Export-Package", "test.metatype");
 		b.setProperty("-metatypeannotations", Enums.class.getName()+ "*");
 		b.build();
+		System.err.println(b.getErrors());
 		assertEquals(0, b.getErrors().size());
 		assertEquals(0, b.getWarnings().size());
 
@@ -387,7 +571,9 @@ public class SpecMetatypeTest extends TestCase {
 		Builder b = new Builder();
 		b.addClasspath(new File("bin"));
 		b.setProperty("Export-Package", "test.metatype");
-		b.setProperty("-metatypeannotations", "*");
+		String name = OCDEmpty.class.getName();
+		
+		b.setProperty("-metatypeannotations", name.substring(0, name.length() - "Empty".length()) + "*");
 		b.build();
 		assertEquals(0, b.getErrors().size());
 		assertEquals(0, b.getWarnings().size());
@@ -716,7 +902,7 @@ public class SpecMetatypeTest extends TestCase {
 		float[] rpaFloat();
 
 		double[] rpaDouble();
-/*
+
 		Collection<Boolean> rBooleans();
 
 		Collection<Byte> rBytes();
@@ -736,7 +922,7 @@ public class SpecMetatypeTest extends TestCase {
 		Collection<String> rStrings();
 
 		Collection<URI> rURIs();
-*/
+
 		Boolean[] raBoolean();
 
 		Byte[] raByte();
@@ -765,7 +951,9 @@ public class SpecMetatypeTest extends TestCase {
 		b.setProperty("-metatypeannotations", TestReturnTypes.class.getName());
 		b.build();
 		Resource r = b.getJar().getResource("OSGI-INF/metatype/test.metatype.SpecMetatypeTest$TestReturnTypes.xml");
+		System.err.println(b.getErrors());
 		assertEquals(0, b.getErrors().size());
+		System.err.println(b.getWarnings());
 		assertEquals(0, b.getWarnings().size());
 		System.err.println(b.getJar().getResources().keySet());
 		assertNotNull(r);
@@ -834,7 +1022,7 @@ public class SpecMetatypeTest extends TestCase {
 		assertEquals("2147483647", xpath.evaluate("//OCD/AD[@id='raDouble']/@cardinality", d));
 		assertEquals("2147483647", xpath.evaluate("//OCD/AD[@id='raString']/@cardinality", d));
 		assertEquals("2147483647", xpath.evaluate("//OCD/AD[@id='raURI']/@cardinality", d));
-/*
+
 		// Wrapper + Object collections
 		assertEquals("Boolean", xpath.evaluate("//OCD/AD[@id='rBooleans']/@type", d));
 		assertEquals("Byte", xpath.evaluate("//OCD/AD[@id='rBytes']/@type", d));
@@ -857,7 +1045,7 @@ public class SpecMetatypeTest extends TestCase {
 		assertEquals("-2147483648", xpath.evaluate("//OCD/AD[@id='rDoubles']/@cardinality", d));
 		assertEquals("-2147483648", xpath.evaluate("//OCD/AD[@id='rStrings']/@cardinality", d));
 		assertEquals("-2147483648", xpath.evaluate("//OCD/AD[@id='rURIs']/@cardinality", d));
-		*/
+		
 	}
 
 	/**
@@ -906,6 +1094,112 @@ public class SpecMetatypeTest extends TestCase {
 		assertEquals(Integer.MAX_VALUE + "", xpath.evaluate("//OCD/AD[@id='notSoSimple']/@cardinality", d));
 
 	}
+	
+	@ObjectClassDefinition
+	public static @interface AnnotationDefaults {
+		int integer() default 1;
+		int[] integers() default {2,3};
+		
+		boolean bool() default true;
+		boolean[] bools() default {true, false};
+		
+		Class clazz() default String.class;
+		Class[] clazzs() default {Integer.class, Double.class};
+		
+		enum L {A, B, C}
+		
+		L l() default L.A;
+		L[] ls() default{L.B, L.C};
+		
+		String string() default "foo";
+		String[] strings() default {"bar", "baz"};
+	}
+	
+	public static void testAnnotationDefaults() throws Exception {
+		Builder b = new Builder();
+		b.addClasspath(new File("bin"));
+		b.setProperty("Export-Package", "test.metatype");
+		b.setProperty("-metatypeannotations", AnnotationDefaults.class.getName());
+		b.build();
+		Resource r = b.getJar().getResource("OSGI-INF/metatype/test.metatype.SpecMetatypeTest$AnnotationDefaults.xml");
+		assertEquals(0, b.getErrors().size());
+		assertEquals(0, b.getWarnings().size());
+		System.err.println(b.getJar().getResources().keySet());
+		assertNotNull(r);
+		IO.copy(r.openInputStream(), System.err);
+
+		Document d = db.parse(r.openInputStream());
+		assertEquals("1", xpath.evaluate("//OCD/AD[@id='integer']/@default", d));
+		assertEquals("2,3", xpath.evaluate("//OCD/AD[@id='integers']/@default", d));
+		
+		assertEquals("true", xpath.evaluate("//OCD/AD[@id='bool']/@default", d));
+		assertEquals("true,false", xpath.evaluate("//OCD/AD[@id='bools']/@default", d));
+		
+		assertEquals(String.class.getName(), xpath.evaluate("//OCD/AD[@id='clazz']/@default", d));
+		assertEquals(Integer.class.getName() + "," + Double.class.getName(), xpath.evaluate("//OCD/AD[@id='clazzs']/@default", d));
+		
+		assertEquals("A", xpath.evaluate("//OCD/AD[@id='l']/@default", d));
+		assertEquals("B,C", xpath.evaluate("//OCD/AD[@id='ls']/@default", d));
+		
+		assertEquals("foo", xpath.evaluate("//OCD/AD[@id='string']/@default", d));
+		assertEquals("bar,baz", xpath.evaluate("//OCD/AD[@id='strings']/@default", d));
+		
+	}
+	
+	@ObjectClassDefinition
+	public static abstract class Abstract {
+		
+	}
+	
+	public static void testAbstract() throws Exception {
+		Builder b = new Builder();
+		b.addClasspath(new File("bin"));
+		b.setProperty("Export-Package", "test.metatype");
+		b.setProperty("-metatypeannotations", Abstract.class.getName());
+		b.build();
+		Resource r = b.getJar().getResource("OSGI-INF/metatype/test.metatype.SpecMetatypeTest$Abstract.xml");
+		assertEquals(1, b.getErrors().size());
+		assertNull(r);
+	}
+	
+	@ObjectClassDefinition
+	public static @interface NestedInner {
+		
+	}
+	
+	@ObjectClassDefinition
+	public static @interface NestedOuter {
+		NestedInner inner();
+	}
+	
+	public static void testNested() throws Exception {
+		{
+			Builder b = new Builder();
+			b.addClasspath(new File("bin"));
+			b.setProperty("Export-Package", "test.metatype");
+			b.setProperty("-metatypeannotations", NestedInner.class.getName() + "," + NestedOuter.class.getName());
+			b.build();
+			Resource r = b.getJar().getResource("OSGI-INF/metatype/test.metatype.SpecMetatypeTest$NestedOuter.xml");
+			assertEquals(1, b.getErrors().size());
+		}
+		{
+			Builder b = new Builder();
+			b.addClasspath(new File("bin"));
+			b.setProperty("Export-Package", "test.metatype");
+			b.setProperty("-metatypeannotations", NestedInner.class.getName() + "," + NestedOuter.class.getName());
+			b.setProperty("-metatypeannotations-flags", "nested");
+			b.build();
+			Resource r = b.getJar().getResource("OSGI-INF/metatype/test.metatype.SpecMetatypeTest$NestedOuter.xml");
+			assertEquals(0, b.getErrors().size());
+			assertEquals(0, b.getWarnings().size());
+			System.err.println(b.getJar().getResources().keySet());
+			assertNotNull(r);
+			IO.copy(r.openInputStream(), System.err);
+
+			Document d = db.parse(r.openInputStream());
+			assertEquals("String", xpath.evaluate("//OCD/AD[@id='inner']/@type", d));
+		}
+	}
 
 
 	@ObjectClassDefinition
@@ -925,28 +1219,28 @@ public class SpecMetatypeTest extends TestCase {
 		b.setProperty("-dsannotations", DesignateComponent.class.getName());
 		b.build();
 		{
-		Resource r = b.getJar().getResource("OSGI-INF/metatype/test.metatype.SpecMetatypeTest$DesignateOCD.xml");
-		assertEquals(b.getErrors().toString(), 0, b.getErrors().size());
-		assertEquals(b.getWarnings().toString(), 0, b.getWarnings().size());
-		System.err.println(b.getJar().getResources().keySet());
-		assertNotNull(r);
-		IO.copy(r.openInputStream(), System.err);
+			Resource r = b.getJar().getResource("OSGI-INF/metatype/test.metatype.SpecMetatypeTest$DesignateOCD.xml");
+			assertEquals(b.getErrors().toString(), 0, b.getErrors().size());
+			assertEquals(b.getWarnings().toString(), 0, b.getWarnings().size());
+			System.err.println(b.getJar().getResources().keySet());
+			assertNotNull(r);
+			IO.copy(r.openInputStream(), System.err);
 
-		Document d = db.parse(r.openInputStream());
-		assertEquals("Test metatype spec metatype test designate OCD", xpath.evaluate("//OCD/@name", d));
-		assertEquals("test.metatype.SpecMetatypeTest$DesignateOCD", xpath.evaluate("//OCD/@id", d));
+			Document d = db.parse(r.openInputStream());
+			assertEquals("Test metatype spec metatype test designate OCD", xpath.evaluate("//OCD/@name", d));
+			assertEquals("test.metatype.SpecMetatypeTest$DesignateOCD", xpath.evaluate("//OCD/@id", d));
 		}
 		{
-		Resource r = b.getJar().getResource("OSGI-INF/metatype/test.metatype.SpecMetatypeTest$DesignateComponent.xml");
-		assertEquals(0, b.getErrors().size());
-		assertEquals(0, b.getWarnings().size());
-		System.err.println(b.getJar().getResources().keySet());
-		assertNotNull(r);
-		IO.copy(r.openInputStream(), System.err);
+			Resource r = b.getJar().getResource("OSGI-INF/metatype/test.metatype.SpecMetatypeTest$DesignateComponent.xml");
+			assertEquals(0, b.getErrors().size());
+			assertEquals(0, b.getWarnings().size());
+			System.err.println(b.getJar().getResources().keySet());
+			assertNotNull(r);
+			IO.copy(r.openInputStream(), System.err);
 
-		Document d = db.parse(r.openInputStream());
-		assertEquals("simplePid", xpath.evaluate("//Designate/@factoryPid", d));
-		assertEquals("test.metatype.SpecMetatypeTest$DesignateOCD", xpath.evaluate("//Object/@ocdref", d));
+			Document d = db.parse(r.openInputStream());
+			assertEquals("simplePid", xpath.evaluate("//Designate/@factoryPid", d));
+			assertEquals("test.metatype.SpecMetatypeTest$DesignateOCD", xpath.evaluate("//Object/@ocdref", d));
 		}
 	}
 }
