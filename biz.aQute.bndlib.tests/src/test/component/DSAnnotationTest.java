@@ -2037,7 +2037,7 @@ public class DSAnnotationTest extends BndTestCase {
 
 	@Component()
 	@Attribute(namespace="org.apache.felix.scr", prefix="felix", attributes="factoryType=custom")
-	@Attributes({@Attribute(namespace="org.apache.felix.scr.ext", prefix="felix2", attributes="foo=bar")})
+	@Attributes({@Attribute(namespace="org.apache.felix.scr.ext", prefix="felix", attributes="foo=bar")})//note prefix collision
 	public static class ExtraAttrbutes implements Serializable, Runnable {
 		private static final long	serialVersionUID	= 1L;
 		@Activate

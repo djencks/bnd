@@ -26,13 +26,13 @@ public class BndExtensionReader implements ExtensionReader {
 	private void doAttribute(Attribute a, ComponentDef component, Analyzer analyzer) {
 		String namespace = a.namespace();
 		String prefix = a.prefix();
-		component.attributes.put("xmlns:" + prefix, namespace);
+		prefix = component.registerNamespace(prefix, namespace);
 		for (String attribute: a.attributes()) {
 			Matcher m = ATTRIBUTE_PATTERN.matcher(attribute);
 			if (m.matches()) {
 				String key = m.group(1);
 				String value = m.group(2).trim();
-				component.attributes.put(prefix + ":" + key, value);
+				component.addExtensionAttribute(prefix, key, value);
 			} else {
 				analyzer.error("Malformed attribute %s", attribute);
 			}
