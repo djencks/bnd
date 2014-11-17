@@ -28,7 +28,8 @@ class ComponentDef {
 	final MultiMap<String,String>	property		= new MultiMap<String,String>(); //key is property name
 	final Map<String, String>		propertyType	= new HashMap<String, String>();
 	final Map<String,ReferenceDef>	references		= new LinkedHashMap<String,ReferenceDef>();
-	final Map<String, String>		attributes		= new HashMap<String, String>();
+	private final Map<String, String>		attributes		= new HashMap<String, String>();
+	private final Map<String, String>		namespaces		= new HashMap<String, String>();
 
 	Version							version			= AnnotationReader.V1_0;
 	String							name;
@@ -45,6 +46,30 @@ class ComponentDef {
 	String							xmlns;
 	String[]						configurationPid;
 	List<Tag>						propertyTags	= new ArrayList<Tag>();
+
+	public String registerNamespace(final String prefix, String namespace) {
+		if (namespaces.containsValue(namespace)) {
+			for (Map.Entry<String, String> entry: namespaces.entrySet()) {
+				if (entry.getValue().equals(namespace)) {
+					return entry.getKey();
+				}
+			}
+		}
+		String prefix2 = prefix;
+		int i = 1;
+		while (namespaces.containsKey(prefix2)) {
+			if (namespaces.get(prefix2).equals(namespace)) {
+				return prefix2;
+			}
+			prefix2 = prefix + i++;
+		}
+		namespaces.put(prefix2, namespace);
+		return prefix2;
+	}
+	
+	public void addExtensionAttribute(String prefix, String key, String value) {
+		attributes.put(prefix + ": + key", value);
+	}
 
 	/**
 	 * Called to prepare. If will look for any errors or inconsistencies in the
@@ -141,6 +166,10 @@ class ComponentDef {
 		if (xmlns != null)
 			component.addAttribute("xmlns:scr", xmlns);
 		
+		for (Map.Entry<String, String> a: namespaces.entrySet()) {
+			component.addAttribute("xmlns:" + a.getKey(), a.getValue());
+		}
+
 		for (Map.Entry<String, String> a: attributes.entrySet()) {
 			component.addAttribute(a.getKey(), a.getValue());
 		}
