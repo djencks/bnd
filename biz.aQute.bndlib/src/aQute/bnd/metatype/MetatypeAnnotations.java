@@ -12,6 +12,7 @@ import aQute.bnd.service.*;
  */
 public class MetatypeAnnotations implements AnalyzerPlugin {
 	
+	private static final String	METAYTPE_ANNOTATIONS_EXTENSIONS	= "-metatypeannotations-extensions";
 	private final Map<String, OCDDef> classToOCDMap = new HashMap<String, OCDDef>();
 
 	public boolean analyzeJar(Analyzer analyzer) throws Exception {
@@ -30,6 +31,27 @@ public class MetatypeAnnotations implements AnalyzerPlugin {
 		Set<String> ocdIds = new HashSet<String>();
 		Set<String> pids = new HashSet<String>();
 
+		List<ExtensionReader> extensions = new ArrayList<ExtensionReader>();
+		Parameters extHeader = OSGiHeader.parseHeader(analyzer.getProperty(METAYTPE_ANNOTATIONS_EXTENSIONS));
+		Instructions extInstructions = new Instructions(extHeader);
+		for (Instruction instruction: extInstructions.keySet()) {
+			String extension = instruction.toString();
+			try {
+				Class< ? extends ExtensionReader> cl = Class.forName(extension).asSubclass(ExtensionReader.class);
+				ExtensionReader reader = cl.newInstance();
+				extensions.add(reader);
+			}
+			catch (ClassNotFoundException e) {
+				analyzer.error("Could not load extension reader class", e);
+			}
+			catch (IllegalAccessException e) {
+				analyzer.error("Could not create extension reader", e);
+			}
+			catch (InstantiationException e) {
+				analyzer.error("Could not create extension reader", e);
+			}
+		}
+
 		Instructions instructions = new Instructions(header);
 		Collection<Clazz> list = analyzer.getClassspace().values();
 
@@ -39,7 +61,7 @@ public class MetatypeAnnotations implements AnalyzerPlugin {
 				if (instruction.matches(c.getFQN())) {
 					if (instruction.isNegated())
 						break;
-					OCDDef definition = OCDReader.getOCDDef(c, analyzer, flags);
+					OCDDef definition = OCDReader.getOCDDef(c, analyzer, flags, extensions);
 					if (definition != null) {
 						definition.prepare(analyzer);
 						if (!ocdIds.add(definition.id)) {
