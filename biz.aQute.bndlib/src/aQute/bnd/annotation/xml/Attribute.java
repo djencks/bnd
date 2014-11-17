@@ -5,7 +5,7 @@ import java.lang.annotation.*;
 @Documented
 @Retention(RetentionPolicy.CLASS)
 @Target({
-	ElementType.TYPE
+	ElementType.TYPE, ElementType.METHOD
 })
 public @interface Attribute {
 	String namespace();
