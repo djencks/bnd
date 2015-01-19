@@ -1252,12 +1252,32 @@ public class DSAnnotationTest extends BndTestCase {
 		}
 	}
 	
-	@Component(reference={@LookupReference(name="log", service=LogService.class, cardinality=ReferenceCardinality.AT_LEAST_ONE,
+	@Component(reference={@Reference(name="log", service=LogService.class, cardinality=ReferenceCardinality.AT_LEAST_ONE,
 			policy=ReferencePolicy.DYNAMIC,
 			policyOption=ReferencePolicyOption.GREEDY,
-			target="(service.id=1)")})
+			target="(service.id=1)"),
+			@Reference(name="logField", service=LogService.class, cardinality=ReferenceCardinality.AT_LEAST_ONE,
+			policy=ReferencePolicy.DYNAMIC,
+			policyOption=ReferencePolicyOption.GREEDY,
+			target="(service.id=1)",
+			field="logField",
+			fieldOption=FieldOption.REPLACE),
+			@Reference(name="logMethod", service=LogService.class, cardinality=ReferenceCardinality.MANDATORY,
+			policy=ReferencePolicy.DYNAMIC,
+			policyOption=ReferencePolicyOption.GREEDY,
+			target="(service.id=1)",
+			bind="setLogMethod",
+			unbind="unsetLogMethod",
+			updated="updatedLogMethod"),
+	})
 	public static class ref_on_comp implements Serializable, Runnable {
 		private static final long	serialVersionUID	= 1L;
+		
+		private List<LogService> logField;
+		
+		protected void setLogMethod(LogService logService) {};
+		protected void updatedLogMethod(LogService logService) {};
+		protected void unsetLogMethod(LogService logService) {}
 
 		@Activate
 	    void activate(@SuppressWarnings("unused")ComponentContext cc) {}
@@ -1281,20 +1301,31 @@ public class DSAnnotationTest extends BndTestCase {
 		Jar jar = b.build();
 		assertOk(b);
 
-		{
-			Resource r = jar.getResource("OSGI-INF/test.component.DSAnnotationTest$ref_on_comp.xml");
-			System.err.println(Processor.join(jar.getResources().keySet(), "\n"));
-			assertNotNull(r);
-			r.write(System.err);
-			XmlTester xt = new XmlTester(r.openInputStream(), "scr", "http://www.osgi.org/xmlns/scr/v1.2.0");
-			// Test the defaults
-			xt.assertAttribute("test.component.DSAnnotationTest$ref_on_comp", "scr:component/implementation/@class");
+		Resource r = jar.getResource("OSGI-INF/test.component.DSAnnotationTest$ref_on_comp.xml");
+		System.err.println(Processor.join(jar.getResources().keySet(), "\n"));
+		assertNotNull(r);
+		r.write(System.err);
+		XmlTester xt = new XmlTester(r.openInputStream(), "scr", "http://www.osgi.org/xmlns/scr/v1.3.0");
+		// Test the defaults
+		xt.assertAttribute("test.component.DSAnnotationTest$ref_on_comp", "scr:component/implementation/@class");
 
-			xt.assertAttribute("log", "scr:component/reference[1]/@name");
-			xt.assertAttribute(LogService.class.getName(), "scr:component/reference[1]/@interface");
-			xt.assertAttribute("1..n", "scr:component/reference[1]/@cardinality");
+		xt.assertAttribute("log", "scr:component/reference[1]/@name");
+		xt.assertAttribute(LogService.class.getName(), "scr:component/reference[1]/@interface");
+		xt.assertAttribute("1..n", "scr:component/reference[1]/@cardinality");
 
-		}
+		xt.assertAttribute("logField", "scr:component/reference[2]/@name");
+		xt.assertAttribute(LogService.class.getName(), "scr:component/reference[2]/@interface");
+		xt.assertAttribute("1..n", "scr:component/reference[2]/@cardinality");
+		xt.assertAttribute("replace", "scr:component/reference[2]/@field-option");
+		//TODO field-component-type
+
+		xt.assertAttribute("logMethod", "scr:component/reference[3]/@name");
+		xt.assertAttribute(LogService.class.getName(), "scr:component/reference[3]/@interface");
+		xt.assertAttribute("1..1", "scr:component/reference[3]/@cardinality");
+		xt.assertAttribute("setLogMethod", "scr:component/reference[3]/@bind");
+		xt.assertAttribute("unsetLogMethod", "scr:component/reference[3]/@unbind");
+		xt.assertAttribute("updatedLogMethod", "scr:component/reference[3]/@updated");
+
 	}
 
 	public @interface NoDefaults {

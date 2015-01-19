@@ -9,6 +9,7 @@ import org.osgi.service.component.annotations.*;
 import aQute.bnd.component.error.*;
 import aQute.bnd.component.error.DeclarativeServicesAnnotationError.*;
 import aQute.bnd.osgi.*;
+import aQute.bnd.osgi.Clazz.FieldDef;
 import aQute.bnd.osgi.Clazz.MethodDef;
 import aQute.bnd.osgi.Descriptors.TypeRef;
 import aQute.bnd.version.*;
@@ -70,7 +71,7 @@ public class AnnotationReader extends ClassDataCollector {
 
 	Clazz						clazz;
 	TypeRef						interfaces[];
-	MethodDef					method;
+	FieldDef					member;
 	TypeRef						className;
 	Analyzer					analyzer;
 	MultiMap<String,String>		methods					= new MultiMap<String,String>();
@@ -192,29 +193,36 @@ public class AnnotationReader extends ClassDataCollector {
 	 * 
 	 */
 	protected void doActivate() {
-		String methodDescriptor = method.getDescriptor().toString();
+		String methodDescriptor = member.getDescriptor().toString();
+		if (!(member instanceof MethodDef)) {
+			analyzer.error(
+					"Activate annotation on a field",
+					clazz, member.getDescriptor()).details(new DeclarativeServicesAnnotationError(className.getFQN(), member.getName(), methodDescriptor, 
+							ErrorType.ACTIVATE_SIGNATURE_ERROR));
+			return;
+		}
 		boolean hasMapReturnType = false;
 		Matcher m = LIFECYCLEDESCRIPTORDS10.matcher(methodDescriptor);
-		if ("activate".equals(method.getName()) && m.matches()) {
-			component.activate = method.getName();
+		if ("activate".equals(member.getName()) && m.matches()) {
+			component.activate = member.getName();
 			hasMapReturnType = m.group(3) != null;
 		} else {
 			m = LIFECYCLEDESCRIPTORDS11.matcher(methodDescriptor);
 			if (m.matches()) {
-				component.activate = method.getName();	
+				component.activate = member.getName();	
 				component.updateVersion(V1_1);
 				hasMapReturnType = m.group(6) != null;
 			} else {
 				m = LIFECYCLEDESCRIPTORDS13.matcher(methodDescriptor);
 				if (m.matches()) {
-					component.activate = method.getName();	
+					component.activate = member.getName();	
 					component.updateVersion(V1_3);
 					hasMapReturnType = m.group(4) != null;
 					processAnnotationArguments(methodDescriptor);
 				} else 
 					analyzer.error(
 							"Activate method for %s descriptor %s is not acceptable.",
-							clazz, method.getDescriptor()).details(new DeclarativeServicesAnnotationError(className.getFQN(), method.getName(), methodDescriptor, 
+							clazz, member.getDescriptor()).details(new DeclarativeServicesAnnotationError(className.getFQN(), member.getName(), methodDescriptor, 
 									ErrorType.ACTIVATE_SIGNATURE_ERROR));
 			}
 		}
@@ -227,29 +235,36 @@ public class AnnotationReader extends ClassDataCollector {
 	 * 
 	 */
 	protected void doDeactivate() {
-		String methodDescriptor = method.getDescriptor().toString();
+		String methodDescriptor = member.getDescriptor().toString();
+		if (!(member instanceof MethodDef)) {
+			analyzer.error(
+					"Deactivate annotation on a field",
+					clazz, member.getDescriptor()).details(new DeclarativeServicesAnnotationError(className.getFQN(), member.getName(), methodDescriptor, 
+							ErrorType.DEACTIVATE_SIGNATURE_ERROR));
+			return;
+		}
 		boolean hasMapReturnType = false;
 		Matcher m = LIFECYCLEDESCRIPTORDS10.matcher(methodDescriptor);
-		if ( "deactivate".equals(method.getName()) && m.matches()) {
-			component.deactivate = method.getName();			
+		if ( "deactivate".equals(member.getName()) && m.matches()) {
+			component.deactivate = member.getName();			
 			hasMapReturnType = m.group(3) != null;
 		} else {
 			m = DEACTIVATEDESCRIPTORDS11.matcher(methodDescriptor);
 			if (m.matches()) {
-				component.deactivate = method.getName();
+				component.deactivate = member.getName();
 				component.updateVersion(V1_1);
 				hasMapReturnType = m.group(8) != null;
 			} else {
 				m = DEACTIVATEDESCRIPTORDS13.matcher(methodDescriptor);
 				if (m.matches()) {
-					component.deactivate = method.getName();
+					component.deactivate = member.getName();
 					component.updateVersion(V1_3);
 					hasMapReturnType = m.group(6) != null;
 					processAnnotationArguments(methodDescriptor);
 				} else
 					analyzer.error(
 							"Deactivate method for %s descriptor %s is not acceptable.",
-							clazz, method.getDescriptor()).details(new DeclarativeServicesAnnotationError(className.getFQN(), method.getName(), methodDescriptor, 
+							clazz, member.getDescriptor()).details(new DeclarativeServicesAnnotationError(className.getFQN(), member.getName(), methodDescriptor, 
 									ErrorType.DEACTIVATE_SIGNATURE_ERROR));
 			}
 		}
@@ -260,17 +275,24 @@ public class AnnotationReader extends ClassDataCollector {
 	 * 
 	 */
 	protected void doModified() {
-		String methodDescriptor = method.getDescriptor().toString();
+		String methodDescriptor = member.getDescriptor().toString();
+		if (!(member instanceof MethodDef)) {
+			analyzer.error(
+					"Modified annotation on a field",
+					clazz, member.getDescriptor()).details(new DeclarativeServicesAnnotationError(className.getFQN(), member.getName(), methodDescriptor, 
+							ErrorType.MODIFIED_SIGNATURE_ERROR));
+			return;
+		}
 		boolean hasMapReturnType = false;
 		Matcher m = LIFECYCLEDESCRIPTORDS11.matcher(methodDescriptor);
 		if (m.matches()) {
-			component.modified = method.getName();
+			component.modified = member.getName();
 			component.updateVersion(V1_1);
 			hasMapReturnType = m.group(6) != null;
 		} else {
 			m = LIFECYCLEDESCRIPTORDS13.matcher(methodDescriptor);
 			if (m.matches()) {
-				component.modified = method.getName();
+				component.modified = member.getName();
 				component.updateVersion(V1_3);
 				hasMapReturnType = m.group(4) != null;
 				processAnnotationArguments(methodDescriptor);
@@ -278,7 +300,7 @@ public class AnnotationReader extends ClassDataCollector {
 
 				analyzer.error(
 						"Modified method for %s descriptor %s is not acceptable.",
-						clazz, method.getDescriptor()).details(new DeclarativeServicesAnnotationError(className.getFQN(), method.getName(), methodDescriptor, 
+						clazz, member.getDescriptor()).details(new DeclarativeServicesAnnotationError(className.getFQN(), member.getName(), methodDescriptor, 
 								ErrorType.MODIFIED_SIGNATURE_ERROR));
 		}
 		checkMapReturnType(hasMapReturnType);
@@ -389,38 +411,15 @@ public class AnnotationReader extends ClassDataCollector {
 		ReferenceDef def = new ReferenceDef();
 		def.className = className.getFQN();
 		def.name = reference.name();
-
-
-		if ( ! (method.isProtected() || method.isPublic()))
-			def.updateVersion(V1_1);
-
-		if (def.name == null) {
-			Matcher m = BINDNAME.matcher(method.getName());
-			if (m.matches())
-				def.name = m.group(2);
-			else
-				analyzer.error("Invalid name for bind method %s", method.getName()).details(
-						new DeclarativeServicesAnnotationError(className.getFQN(), method.getName(), method.getDescriptor().toString(), 
-						ErrorType.INVALID_REFERENCE_BIND_METHOD_NAME));
-		}
-
+		def.bind = reference.bind();
 		def.unbind = reference.unbind();
 		def.updated = reference.updated();
-		def.bind = method.getName();
-		def.bindDescriptor = method.getDescriptor().toString();
-
-		String annoService = raw.get("service");
-		if (annoService != null) 
-			annoService = Clazz.objectDescriptorToFQN(annoService);
-		ReferenceScope scope = reference.scope();
-
-		String service = determineReferenceType(method.getDescriptor().toString(), def, annoService, scope);
-		
-		def.service = service;
-		if (service == null)
-			analyzer.error(
-					"In component %s, method %s,  cannot recognize the signature of the descriptor: %s",
-					component.name, def.name, method.getDescriptor());
+		def.field = reference.field();
+		def.fieldOption = reference.fieldOption();
+		def.cardinality = reference.cardinality();
+		def.policy = reference.policy();
+		def.policyOption = reference.policyOption();
+		def.scope = reference.scope();
 
 		// Check if we have a target, this must be a filter
 		def.target = reference.target();
@@ -433,7 +432,55 @@ public class AnnotationReader extends ClassDataCollector {
 							ErrorType.INVALID_TARGET_FILTER));
 		}
 		
+		String annoService = raw.get("service");
+		if (annoService != null) 
+			annoService = Clazz.objectDescriptorToFQN(annoService);
 
+		if (member != null) {
+			if (member instanceof MethodDef) {
+				if (!(member.isProtected() || member.isPublic()))
+				    def.updateVersion(V1_1);
+				def.bind = member.getName();
+				if (def.name == null) {
+					Matcher m = BINDNAME.matcher(member.getName());
+					if (m.matches())
+						def.name = m.group(2);
+					else
+						analyzer.error("Invalid name for bind method %s", member.getName()).details(
+								new DeclarativeServicesAnnotationError(className.getFQN(), member.getName(), member
+										.getDescriptor().toString(), ErrorType.INVALID_REFERENCE_BIND_METHOD_NAME));
+				}
+				def.bindDescriptor = member.getDescriptor().toString();
+
+
+				String service = determineReferenceType(member.getDescriptor().toString(), def, annoService, def.scope);
+				
+				def.service = service;
+				if (service == null)
+					analyzer.error(
+							"In component %s, method %s,  cannot recognize the signature of the descriptor: %s",
+							component.name, def.name, member.getDescriptor());
+
+			} else if (member instanceof FieldDef) {
+				def.updateVersion(V1_3);
+				def.field = member.getName();
+
+				String service = annoService == null? member.getType().getFQN(): annoService;
+				
+				def.service = service;
+				if (service == null)
+					analyzer.error(
+							"In component %s, method %s,  cannot recognize the signature of the descriptor: %s",
+							component.name, def.name, member.getDescriptor());
+
+			}
+				
+		} else {
+			def.service = annoService;
+		}
+
+		//TODO calculate fieldComponentType
+		
 		if (component.references.containsKey(def.name))
 			analyzer.error(
 					"In component %s, multiple references with the same name: %s. Previous def: %s, this def: %s",
@@ -443,10 +490,6 @@ public class AnnotationReader extends ClassDataCollector {
 		else
 			component.references.put(def.name, def);
 
-		def.cardinality = reference.cardinality();
-		def.policy = reference.policy();
-		def.policyOption = reference.policyOption();
-		def.scope = reference.scope();
 	}
 
 	private String determineReferenceType(String methodDescriptor, ReferenceDef def, String annoService, ReferenceScope scope) {
@@ -601,20 +644,30 @@ public class AnnotationReader extends ClassDataCollector {
 				component.service[i] = ref;
 			}
 		}
+		
+		//make sure reference processing knows this is a Reference in Component
+		member = null;
 		Object[] refAnnotations = annotation.get("reference");
 		if (refAnnotations != null) {
 			for (Object o: refAnnotations) {
 				Annotation refAnnotation = (Annotation)o;
-				LookupReference ref = refAnnotation.getAnnotation();
-				ReferenceDef refdef = new ReferenceDef();
-				refdef.name = ref.name();
-				refdef.service = analyzer.getTypeRef((String) refAnnotation.get("service")).getFQN();
-				refdef.cardinality = ref.cardinality();
-				refdef.policy = ref.policy();
-				refdef.policyOption = ref.policyOption();
-				refdef.target = ref.target();
-				refdef.scope = ref.scope();
-				component.references.put(refdef.name, refdef);
+				Reference ref = refAnnotation.getAnnotation();
+				doReference(ref, refAnnotation);
+//				ReferenceDef refdef = new ReferenceDef();
+//				refdef.name = ref.name();
+//				refdef.bind = ref.bind();
+//				refdef.updated = ref.updated();
+//				refdef.unbind = ref.unbind();
+//				refdef.field = ref.field();
+//				refdef.fieldOption = ref.fieldOption();
+//				
+//				refdef.service = analyzer.getTypeRef((String) refAnnotation.get("service")).getFQN();
+//				refdef.cardinality = ref.cardinality();
+//				refdef.policy = ref.policy();
+//				refdef.policyOption = ref.policyOption();
+//				refdef.target = ref.target();
+//				refdef.scope = ref.scope();
+//				component.references.put(refdef.name, refdef);
 			}
 		}
 
@@ -671,8 +724,13 @@ public class AnnotationReader extends ClassDataCollector {
 		if (!baseclass && Modifier.isPrivate(access))
 			return;
 
-		this.method = method;
+		this.member = method;
 		methods.add(method.getName(), method.getDescriptor().toString());
+	}
+	
+	@Override
+	public void field(FieldDef field) {
+		this.member = field;
 	}
 
 	@Override
