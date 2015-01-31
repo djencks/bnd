@@ -2065,5 +2065,41 @@ public class DSAnnotationTest extends BndTestCase {
 		xt.assertAttribute("String", "scr:component/property[@name='two']/@type");
 	}
 
+	@Component
+	public static class TestFieldCollectionType {
+		
+		@Reference(service=LogService.class)
+		private Collection<ServiceReference<LogService>> srField;
+		
+//		@Reference(service=LogService.class)
+//		private Collection<ServiceObjects<LogService>> soField;
+		
+		@Reference(service=LogService.class)
+		private Collection<Map<String, Object>> propsField;
+		
+		@Reference(service=LogService.class)
+		private Collection<LogService> serviceField;
+		
+		@Reference(service=LogService.class)
+		private Collection<Map.Entry<Map<String, Object>, LogService>> tupleField;
+		
+	}
+	
+	public static void testFieldCollectionType() throws Exception {
+		Builder b = new Builder();
+		b.setProperty("-dsannotations", "test.component.DSAnnotationTest*TestFieldCollectionType");
+		b.setProperty("Private-Package", "test.component");
+		b.addClasspath(new File("bin"));
+
+		Jar jar = b.build();
+		assertOk(b);
+
+		Resource r = jar.getResource("OSGI-INF/testFieldCollectionType.xml");
+		assertNotNull(r);
+		r.write(System.err);
+		XmlTester xt = new XmlTester(r.openInputStream(), "scr", "http://www.osgi.org/xmlns/scr/v1.3.0");
+		xt.assertNamespace("http://www.osgi.org/xmlns/scr/v1.3.0");
+	}
+
 
 }

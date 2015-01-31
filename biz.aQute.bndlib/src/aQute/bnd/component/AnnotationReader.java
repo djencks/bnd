@@ -11,6 +11,7 @@ import aQute.bnd.component.error.DeclarativeServicesAnnotationError.*;
 import aQute.bnd.osgi.*;
 import aQute.bnd.osgi.Clazz.FieldDef;
 import aQute.bnd.osgi.Clazz.MethodDef;
+import aQute.bnd.osgi.Descriptors.Descriptor;
 import aQute.bnd.osgi.Descriptors.TypeRef;
 import aQute.bnd.version.*;
 import aQute.lib.collections.*;
@@ -473,6 +474,7 @@ public class AnnotationReader extends ClassDataCollector {
 							"In component %s, method %s,  cannot recognize the signature of the descriptor: %s",
 							component.name, def.name, member.getDescriptor());
 
+//				def.fieldCollectionType = getFieldCollectionType(member);
 			}
 				
 		} else {
@@ -738,4 +740,23 @@ public class AnnotationReader extends ClassDataCollector {
 		this.extendsClass = name;
 	}
 
+	private FieldCollectionType getFieldCollectionType(FieldDef field) {
+		Descriptor d = field.getDescriptor();
+		TypeRef t = d.getType();
+		TypeRef classRef = t.getClassRef();
+		if (t.getFQN().equals(Collection.class.getName()) || t.getFQN().equals(List.class.getName())) {
+			TypeRef componentRef = classRef.getComponentTypeRef();
+			if (componentRef.getFQN().equals("org.osgi.framework.ServiceReference")) 
+				return FieldCollectionType.reference;
+			if (componentRef.getFQN().equals("org.osgi.framework.ServiceObjects")) 
+				return FieldCollectionType.serviceobjects;
+			if (componentRef.getFQN().equals(Map.class.getName())) 
+				return FieldCollectionType.properties;
+			if (componentRef.getFQN().equals(Map.Entry.class.getName())) 
+				return FieldCollectionType.tuple;
+			return FieldCollectionType.service;
+			
+		}
+		return null;
+	}
 }
