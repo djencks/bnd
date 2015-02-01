@@ -3,13 +3,15 @@ package aQute.bnd.metatype;
 import java.lang.annotation.Annotation;
 import java.util.regex.*;
 
+import aQute.bnd.annotation.plugin.*;
 import aQute.bnd.annotation.xml.*;
-import aQute.bnd.component.*;
 import aQute.bnd.osgi.*;
 import aQute.bnd.osgi.Clazz.MethodDef;
 
+@BndPlugin(name = BndExtensionReader.BND_METATYPE_EXTENSIONS)
 public class BndExtensionReader implements ExtensionReader {
 
+	public static final String	BND_METATYPE_EXTENSIONS	= "BndMetatypeExtensions";
 	final static Pattern		ATTRIBUTE_PATTERN			= Pattern
 			.compile("\\s*([^=\\s:]+)\\s*=(.*)");
 
@@ -69,5 +71,9 @@ public class BndExtensionReader implements ExtensionReader {
 		}
 	}
 
+	@Override
+	public String name() {
+		return BND_METATYPE_EXTENSIONS;
+	}
 
 }

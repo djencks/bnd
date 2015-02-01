@@ -2,11 +2,14 @@ package aQute.bnd.component;
 
 import java.util.regex.*;
 
+import aQute.bnd.annotation.plugin.*;
 import aQute.bnd.annotation.xml.*;
 import aQute.bnd.osgi.*;
 
+@BndPlugin(name = BndExtensionReader.BND_DS_EXTENSIONS)
 public class BndExtensionReader implements ExtensionReader {
 
+	public static final String	BND_DS_EXTENSIONS	= "BndDSExtensions";
 	final static Pattern		ATTRIBUTE_PATTERN			= Pattern
 			.compile("\\s*([^=\\s:]+)\\s*=(.*)");
 
@@ -37,6 +40,11 @@ public class BndExtensionReader implements ExtensionReader {
 				analyzer.error("Malformed attribute %s", attribute);
 			}
 		}
+	}
+
+	@Override
+	public String name() {
+		return BND_DS_EXTENSIONS;
 	}
 
 }

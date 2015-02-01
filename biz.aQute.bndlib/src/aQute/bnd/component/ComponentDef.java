@@ -2,11 +2,9 @@ package aQute.bnd.component;
 
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.regex.*;
 
 import org.osgi.service.component.annotations.*;
 
-import aQute.bnd.annotation.xml.*;
 import aQute.bnd.osgi.*;
 import aQute.bnd.osgi.Descriptors.TypeRef;
 import aQute.bnd.version.*;
@@ -68,7 +66,7 @@ class ComponentDef {
 	}
 	
 	public void addExtensionAttribute(String prefix, String key, String value) {
-		attributes.put(prefix + ": + key", value);
+		attributes.put(prefix + ":" + key, value);
 	}
 
 	/**

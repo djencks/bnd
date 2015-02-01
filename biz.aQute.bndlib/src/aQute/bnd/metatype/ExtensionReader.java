@@ -10,4 +10,6 @@ public interface ExtensionReader {
 	void doMethodAnnotation(MethodDef method, java.lang.annotation.Annotation ad, Annotation a, OCDDef ocd, ADDef adDef,
 			Analyzer analyzer);
 
+	String name();
+
 }

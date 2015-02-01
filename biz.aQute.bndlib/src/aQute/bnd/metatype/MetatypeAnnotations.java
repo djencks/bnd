@@ -2,7 +2,6 @@ package aQute.bnd.metatype;
 
 import java.util.*;
 
-import aQute.bnd.component.TagResource;
 import aQute.bnd.header.*;
 import aQute.bnd.osgi.*;
 import aQute.bnd.service.*;
@@ -31,25 +30,22 @@ public class MetatypeAnnotations implements AnalyzerPlugin {
 		Set<String> ocdIds = new HashSet<String>();
 		Set<String> pids = new HashSet<String>();
 
+		List<ExtensionReader> allExtensions = analyzer.getPlugins(ExtensionReader.class);
 		List<ExtensionReader> extensions = new ArrayList<ExtensionReader>();
 		Parameters extHeader = OSGiHeader.parseHeader(analyzer.getProperty(METAYTPE_ANNOTATIONS_EXTENSIONS));
 		Instructions extInstructions = new Instructions(extHeader);
+		Set<Instruction> notFound = new HashSet<Instruction>(extInstructions.keySet());
 		for (Instruction instruction: extInstructions.keySet()) {
 			String extension = instruction.toString();
-			try {
-				Class< ? extends ExtensionReader> cl = Class.forName(extension).asSubclass(ExtensionReader.class);
-				ExtensionReader reader = cl.newInstance();
-				extensions.add(reader);
+			for (ExtensionReader ext : allExtensions) {
+				if (ext.name().equalsIgnoreCase(extension)) {
+					extensions.add(ext);
+					notFound.remove(instruction);
+				}
 			}
-			catch (ClassNotFoundException e) {
-				analyzer.error("Could not load extension reader class", e);
-			}
-			catch (IllegalAccessException e) {
-				analyzer.error("Could not create extension reader", e);
-			}
-			catch (InstantiationException e) {
-				analyzer.error("Could not create extension reader", e);
-			}
+		}
+		if (!notFound.isEmpty()) {
+			analyzer.warning("Some extensions not found: " + notFound);
 		}
 
 		Instructions instructions = new Instructions(header);

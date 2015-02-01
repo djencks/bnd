@@ -7,25 +7,13 @@ import java.util.regex.*;
 import org.osgi.service.component.annotations.*;
 
 import aQute.bnd.component.error.*;
-import aQute.bnd.component.error.DeclarativeServicesAnnotationError.*;
+import aQute.bnd.component.error.DeclarativeServicesAnnotationError.ErrorType;
 import aQute.bnd.osgi.*;
 import aQute.bnd.osgi.Clazz.MethodDef;
 import aQute.bnd.osgi.Descriptors.TypeRef;
 import aQute.bnd.version.*;
 import aQute.lib.collections.*;
 
-/**
- * fixup any unbind methods To declare no unbind method, the value "-" must be
- * used. If not specified, the name of the unbind method is derived from the
- * name of the annotated bind method. If the annotated method name begins with
- * set, that is replaced with unset to derive the unbind method name. If the
- * annotated method name begins with add, that is replaced with remove to derive
- * the unbind method name. Otherwise, un is prefixed to the annotated method
- * name to derive the unbind method name.
- * 
- * @return
- * @throws Exception
- */
 public class AnnotationReader extends ClassDataCollector {
 	final static TypeRef[]		EMPTY					= new TypeRef[0];
 	final static Pattern		PROPERTY_PATTERN		= Pattern

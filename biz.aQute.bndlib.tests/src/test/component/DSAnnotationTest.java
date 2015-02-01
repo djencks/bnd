@@ -14,6 +14,7 @@ import org.osgi.service.log.*;
 import aQute.bnd.annotation.xml.*;
 import aQute.bnd.component.*;
 import aQute.bnd.osgi.*;
+import aQute.bnd.osgi.Constants;
 import aQute.bnd.test.*;
 import aQute.lib.io.*;
 import aQute.service.reporter.Report.Location;
@@ -2052,8 +2053,9 @@ public class DSAnnotationTest extends BndTestCase {
 	
 	public static void testExtraAttrbutes() throws Exception {
 		Builder b = new Builder();
+		b.setProperty(Constants.PLUGIN, BndExtensionReader.class.getName());
 		b.setProperty("-dsannotations", "test.component.DSAnnotationTest$ExtraAttrbutes*");
-		b.setProperty("-dsannotations-extensions", BndExtensionReader.class.getName());
+		b.setProperty("-dsannotations-extensions", BndExtensionReader.BND_DS_EXTENSIONS);
 		b.setProperty("Private-Package", "test.component");
 		b.addClasspath(new File("bin"));
 

@@ -1093,13 +1093,14 @@ public class SpecMetatypeTest extends TestCase {
 		MetatypeVersion version = MetatypeVersion.VERSION_1_3;
 		Builder b = new Builder();
 		b.addClasspath(new File("bin"));
+		b.setProperty(Constants.PLUGIN, BndExtensionReader.class.getName());
 		b.setProperty("Export-Package", "test.metatype");
 		b.setProperty("-metatypeannotations", TestExtensions.class.getName());
-		b.setProperty("-metatypeannotations-extensions", BndExtensionReader.class.getName());
+		b.setProperty("-metatypeannotations-extensions", BndExtensionReader.BND_METATYPE_EXTENSIONS);
 		b.build();
 		Resource r = b.getJar().getResource("OSGI-INF/metatype/test.metatype.SpecMetatypeTest$TestExtensions.xml");
 		assertEquals(0, b.getErrors().size());
-		assertEquals(0, b.getWarnings().size());
+		assertEquals("warnings: " + b.getWarnings(), 0, b.getWarnings().size());
 		System.err.println(b.getJar().getResources().keySet());
 		assertNotNull(r);
 		IO.copy(r.openInputStream(), System.err);

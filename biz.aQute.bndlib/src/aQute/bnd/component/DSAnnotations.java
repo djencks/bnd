@@ -28,25 +28,22 @@ public class DSAnnotations implements AnalyzerPlugin {
 		if (sc != null && sc.trim().length() > 0)
 			names.add(sc);
 		
+		List<ExtensionReader> allExtensions = analyzer.getPlugins(ExtensionReader.class);
 		List<ExtensionReader> extensions = new ArrayList<ExtensionReader>();
 		Parameters extHeader = OSGiHeader.parseHeader(analyzer.getProperty(DSANNOTATIONS_EXTENSIONS));
 		Instructions extInstructions = new Instructions(extHeader);
+		Set<Instruction> notFound = new HashSet<Instruction>(extInstructions.keySet());
 		for (Instruction instruction: extInstructions.keySet()) {
 			String extension = instruction.toString();
-			try {
-				Class< ? extends ExtensionReader> cl = Class.forName(extension).asSubclass(ExtensionReader.class);
-				ExtensionReader reader = cl.newInstance();
-				extensions.add(reader);
+			for (ExtensionReader ext : allExtensions) {
+				if (ext.name().equalsIgnoreCase(extension)) {
+					extensions.add(ext);
+					notFound.remove(instruction);
+				}
 			}
-			catch (ClassNotFoundException e) {
-				analyzer.error("Could not load extension reader class", e);
-			}
-			catch (IllegalAccessException e) {
-				analyzer.error("Could not create extension reader", e);
-			}
-			catch (InstantiationException e) {
-				analyzer.error("Could not create extension reader", e);
-			}
+		}
+		if (!notFound.isEmpty()) {
+			analyzer.warning("Some extensions not found: " + notFound);
 		}
 
 		for (Clazz c : list) {
