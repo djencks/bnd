@@ -7,11 +7,10 @@ import java.util.regex.*;
 import org.osgi.service.component.annotations.*;
 
 import aQute.bnd.component.error.*;
-import aQute.bnd.component.error.DeclarativeServicesAnnotationError.*;
+import aQute.bnd.component.error.DeclarativeServicesAnnotationError.ErrorType;
 import aQute.bnd.osgi.*;
 import aQute.bnd.osgi.Clazz.FieldDef;
 import aQute.bnd.osgi.Clazz.MethodDef;
-import aQute.bnd.osgi.Descriptors.Descriptor;
 import aQute.bnd.osgi.Descriptors.TypeRef;
 import aQute.bnd.version.*;
 import aQute.lib.collections.*;
@@ -465,6 +464,8 @@ public class AnnotationReader extends ClassDataCollector {
 			} else if (member instanceof FieldDef) {
 				def.updateVersion(V1_3);
 				def.field = member.getName();
+				if (def.name == null)
+					def.name = def.field;
 
 				String service = annoService == null? member.getType().getFQN(): annoService;
 				
@@ -474,7 +475,7 @@ public class AnnotationReader extends ClassDataCollector {
 							"In component %s, method %s,  cannot recognize the signature of the descriptor: %s",
 							component.name, def.name, member.getDescriptor());
 
-//				def.fieldCollectionType = getFieldCollectionType(member);
+				def.fieldCollectionType = getFieldCollectionType(member);
 			}
 				
 		} else {
@@ -741,22 +742,21 @@ public class AnnotationReader extends ClassDataCollector {
 	}
 
 	private FieldCollectionType getFieldCollectionType(FieldDef field) {
-		Descriptor d = field.getDescriptor();
-		TypeRef t = d.getType();
-		TypeRef classRef = t.getClassRef();
-		if (t.getFQN().equals(Collection.class.getName()) || t.getFQN().equals(List.class.getName())) {
-			TypeRef componentRef = classRef.getComponentTypeRef();
-			if (componentRef.getFQN().equals("org.osgi.framework.ServiceReference")) 
+		String sig = field.getSignature();
+		String[] sigs = sig.split("<>");
+		if ("Ljava/util/collection;".equals(sigs[0]) || "Ljava/util/List;".equals(sigs[0])) {
+			if ("Lorg/osgi/framework/ServiceReference;".equals(sigs[1]))
 				return FieldCollectionType.reference;
-			if (componentRef.getFQN().equals("org.osgi.framework.ServiceObjects")) 
+			if ("Lorg/osgi/framework/ServiceObjects;".equals(sigs[1]))
 				return FieldCollectionType.serviceobjects;
-			if (componentRef.getFQN().equals(Map.class.getName())) 
+			if ("Ljava/util/Map;".equals(sigs[1]))
 				return FieldCollectionType.properties;
-			if (componentRef.getFQN().equals(Map.Entry.class.getName())) 
+			if ("Ljava/util/Map$Entry;".equals(sigs[1]))
 				return FieldCollectionType.tuple;
 			return FieldCollectionType.service;
 			
 		}
+
 		return null;
 	}
 }

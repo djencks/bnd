@@ -2094,7 +2094,7 @@ public class DSAnnotationTest extends BndTestCase {
 		Jar jar = b.build();
 		assertOk(b);
 
-		Resource r = jar.getResource("OSGI-INF/testFieldCollectionType.xml");
+		Resource r = jar.getResource("OSGI-INF/" + TestFieldCollectionType.class.getName() + ".xml");
 		assertNotNull(r);
 		r.write(System.err);
 		XmlTester xt = new XmlTester(r.openInputStream(), "scr", "http://www.osgi.org/xmlns/scr/v1.3.0");
