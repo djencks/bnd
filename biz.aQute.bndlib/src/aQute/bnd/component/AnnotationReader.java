@@ -468,38 +468,46 @@ public class AnnotationReader extends ClassDataCollector {
 					def.name = def.field;
 
 				String sig = member.getSignature();
+				if (sig == null)
+					// no generics, the descriptor will be the class name.
+					sig = member.getDescriptor().toString();
 				String[] sigs = sig.split("[<;>]");
 				int sigLength = sigs.length;
-				int serviceId = 0;
-				if ("Ljava/util/Collection".equals(sigs[0]) || "Ljava/util/List".equals(sigs[0])) {
-					if (sufficientGenerics(2, sigLength, def, sig)) {
-						serviceId = 2;
-						if ("Lorg/osgi/framework/ServiceReference".equals(sigs[1])) {
-							if (sufficientGenerics(3, sigLength, def, sig)) {
-								def.fieldCollectionType = FieldCollectionType.reference;
-							}
-						} else if ("Lorg/osgi/framework/ServiceObjects".equals(sigs[1])) {
-							if (sufficientGenerics(3, sigLength, def, sig)) {
-								def.fieldCollectionType = FieldCollectionType.serviceobjects;
-							}
-						} else if ("Ljava/util/Map".equals(sigs[1])) {
-							if (sufficientGenerics(3, sigLength, def, sig)) {
-								def.fieldCollectionType = FieldCollectionType.properties;
-							}
-						} else if ("Ljava/util/Map$Entry".equals(sigs[1]) && sufficientGenerics(3, sigLength, def, sig)) {
-							if ( "Ljava/util/Map".equals(sigs[2]) && "Ljava/lang/String".equals(sigs[3]) && "Ljava/lang/Object".equals(sigs[4])) {
-								def.fieldCollectionType = FieldCollectionType.tuple;
-								serviceId = 7; // ;>;
-							}
-						} else {
-							def.fieldCollectionType = FieldCollectionType.service;
-							serviceId = 1;
-
+				int index = 0;
+				FieldCollectionType fieldCollectionType = null;
+				boolean isCollection = false;
+				if ("Ljava/util/Collection".equals(sigs[index]) || "Ljava/util/List".equals(sigs[index])) {
+					index++;
+					isCollection = true;
+				}
+				if (sufficientGenerics(index, sigLength, def, sig)) {
+					if ("Lorg/osgi/framework/ServiceReference".equals(sigs[index])) {
+						if (sufficientGenerics(index++, sigLength, def, sig)) {
+							fieldCollectionType = FieldCollectionType.reference;
 						}
+					} else if ("Lorg/osgi/framework/ServiceObjects".equals(sigs[index])) {
+						if (sufficientGenerics(index++, sigLength, def, sig)) {
+							fieldCollectionType = FieldCollectionType.serviceobjects;
+						}
+					} else if ("Ljava/util/Map".equals(sigs[index])) {
+						if (sufficientGenerics(index++, sigLength, def, sig)) {
+							fieldCollectionType = FieldCollectionType.properties;
+						}
+					} else if ("Ljava/util/Map$Entry".equals(sigs[index])
+							&& sufficientGenerics(index++ + 5, sigLength, def, sig)) {
+						if ("Ljava/util/Map".equals(sigs[index++]) && "Ljava/lang/String".equals(sigs[index++])
+								&& "Ljava/lang/Object".equals(sigs[index++])) {
+							fieldCollectionType = FieldCollectionType.tuple;
+							index += 2; // ;>;
+						}
+					} else {
+						fieldCollectionType = FieldCollectionType.service;
 					}
 				}
-				if (annoService == null && serviceId <= sigs.length) {
-					annoService = sigs[serviceId].substring(1).replace('/', '.');
+				if (isCollection)
+					def.fieldCollectionType = fieldCollectionType;
+				if (annoService == null && index <= sigs.length) {
+					annoService = sigs[index].substring(1).replace('/', '.');
 
 				}
 				def.service = annoService;
@@ -523,8 +531,8 @@ public class AnnotationReader extends ClassDataCollector {
 
 	}
 
-	private boolean sufficientGenerics(int required, int sigLength, ReferenceDef def, String sig) {
-		if (required > sigLength) {
+	private boolean sufficientGenerics(int index, int sigLength, ReferenceDef def, String sig) {
+		if (index + 1 > sigLength) {
 			analyzer.error(
 					"In component %s, method %s,  signature: %s does not have sufficient generic type information",
 					component.name, def.name, sig);

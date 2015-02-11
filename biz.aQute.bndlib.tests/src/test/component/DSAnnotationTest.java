@@ -2066,14 +2066,65 @@ public class DSAnnotationTest extends BndTestCase {
 	}
 
 	@Component
+	public static class TestFieldInjection {
+		@Reference
+		private LogService									serviceField;
+
+		@Reference
+		private ServiceReference<LogService>				srField;
+
+		// @Reference
+		// private ComponentServiceObjects<LogService> so;
+
+		@Reference(service = LogService.class)
+		private Map<String,Object>							propsField;
+
+		@Reference
+		private Map.Entry<Map<String,Object>,LogService>	tupleField;
+
+	}
+
+	public static void testFieldInjection() throws Exception {
+		Builder b = new Builder();
+		b.setProperty("-dsannotations", "test.component.DSAnnotationTest*TestFieldInjection");
+		b.setProperty("Private-Package", "test.component");
+		b.addClasspath(new File("bin"));
+
+		Jar jar = b.build();
+		assertOk(b);
+
+		Resource r = jar.getResource("OSGI-INF/" + TestFieldInjection.class.getName() + ".xml");
+		assertNotNull(r);
+		r.write(System.err);
+		XmlTester xt = new XmlTester(r.openInputStream(), "scr", "http://www.osgi.org/xmlns/scr/v1.3.0");
+		xt.assertNamespace("http://www.osgi.org/xmlns/scr/v1.3.0");
+
+		xt.assertAttribute("propsField", "scr:component/reference[1]/@name");
+		xt.assertAttribute(LogService.class.getName(), "scr:component/reference[1]/@interface");
+		xt.assertAttribute("propsField", "scr:component/reference[1]/@field");
+
+		xt.assertAttribute("serviceField", "scr:component/reference[2]/@name");
+		xt.assertAttribute(LogService.class.getName(), "scr:component/reference[2]/@interface");
+		xt.assertAttribute("serviceField", "scr:component/reference[2]/@field");
+
+		xt.assertAttribute("srField", "scr:component/reference[3]/@name");
+		xt.assertAttribute(LogService.class.getName(), "scr:component/reference[3]/@interface");
+		xt.assertAttribute("srField", "scr:component/reference[3]/@field");
+
+		xt.assertAttribute("tupleField", "scr:component/reference[4]/@name");
+		xt.assertAttribute(LogService.class.getName(), "scr:component/reference[4]/@interface");
+		xt.assertAttribute("tupleField", "scr:component/reference[4]/@field");
+	}
+
+	@Component
 	public static class TestFieldCollectionType {
 		
 		@Reference
 		// (service = LogService.class)
 		private Collection<ServiceReference<LogService>> srField;
 		
-//		@Reference(service=LogService.class)
-//		private Collection<ServiceObjects<LogService>> soField;
+		// @Reference//(service=LogService.class)
+		// private Collection<ComponentServiceObjects<LogService>> soField;
 		
 		@Reference(service = LogService.class)
 		private Collection<Map<String, Object>> propsField;
