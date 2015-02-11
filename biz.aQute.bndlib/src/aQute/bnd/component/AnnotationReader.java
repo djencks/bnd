@@ -423,15 +423,15 @@ public class AnnotationReader extends ClassDataCollector {
 
 		// Check if we have a target, this must be a filter
 		def.target = reference.target();
-		
+
 		if (def.target != null) {
 			String error = Verifier.validateFilter(def.target);
 			if (error != null)
-				analyzer.error("Invalid target filter %s for %s: %s", def.target, def.name, error)
-					.details(new DeclarativeServicesAnnotationError(className.getFQN(), def.bind, def.bindDescriptor,
-							ErrorType.INVALID_TARGET_FILTER));
+				analyzer.error("Invalid target filter %s for %s: %s", def.target, def.name, error).details(
+						new DeclarativeServicesAnnotationError(className.getFQN(), def.bind, def.bindDescriptor,
+								ErrorType.INVALID_TARGET_FILTER));
 		}
-		
+
 		String annoService = raw.get("service");
 		if (annoService != null) 
 			annoService = Clazz.objectDescriptorToFQN(annoService);
@@ -439,7 +439,7 @@ public class AnnotationReader extends ClassDataCollector {
 		if (member != null) {
 			if (member instanceof MethodDef) {
 				if (!(member.isProtected() || member.isPublic()))
-				    def.updateVersion(V1_1);
+					def.updateVersion(V1_1);
 				def.bind = member.getName();
 				if (def.name == null) {
 					Matcher m = BINDNAME.matcher(member.getName());
@@ -454,7 +454,7 @@ public class AnnotationReader extends ClassDataCollector {
 
 
 				String service = determineReferenceType(member.getDescriptor().toString(), def, annoService, def.scope);
-				
+
 				def.service = service;
 				if (service == null)
 					analyzer.error(
@@ -469,51 +469,68 @@ public class AnnotationReader extends ClassDataCollector {
 
 				String sig = member.getSignature();
 				String[] sigs = sig.split("[<;>]");
+				int sigLength = sigs.length;
 				int serviceId = 0;
 				if ("Ljava/util/Collection".equals(sigs[0]) || "Ljava/util/List".equals(sigs[0])) {
-					serviceId = 2;
-					if ("Lorg/osgi/framework/ServiceReference".equals(sigs[1]))
-						def.fieldCollectionType = FieldCollectionType.reference;
-					else if ("Lorg/osgi/framework/ServiceObjects".equals(sigs[1]))
-						def.fieldCollectionType = FieldCollectionType.serviceobjects;
-					else if ("Ljava/util/Map".equals(sigs[1]))
-						def.fieldCollectionType = FieldCollectionType.properties;
-					else if ("Ljava/util/Map$Entry".equals(sigs[1]) && "Ljava/util/Map".equals(sigs[2])
-							&& "Ljava/lang/String".equals(sigs[3]) && "Ljava/lang/Object".equals(sigs[4])) {
-						def.fieldCollectionType = FieldCollectionType.tuple;
-						serviceId = 7; // ;>;
-					} else {
-						def.fieldCollectionType = FieldCollectionType.service;
-						serviceId = 1;
+					if (sufficientGenerics(2, sigLength, def, sig)) {
+						serviceId = 2;
+						if ("Lorg/osgi/framework/ServiceReference".equals(sigs[1])) {
+							if (sufficientGenerics(3, sigLength, def, sig)) {
+								def.fieldCollectionType = FieldCollectionType.reference;
+							}
+						} else if ("Lorg/osgi/framework/ServiceObjects".equals(sigs[1])) {
+							if (sufficientGenerics(3, sigLength, def, sig)) {
+								def.fieldCollectionType = FieldCollectionType.serviceobjects;
+							}
+						} else if ("Ljava/util/Map".equals(sigs[1])) {
+							if (sufficientGenerics(3, sigLength, def, sig)) {
+								def.fieldCollectionType = FieldCollectionType.properties;
+							}
+						} else if ("Ljava/util/Map$Entry".equals(sigs[1]) && sufficientGenerics(3, sigLength, def, sig)) {
+							if ( "Ljava/util/Map".equals(sigs[2]) && "Ljava/lang/String".equals(sigs[3]) && "Ljava/lang/Object".equals(sigs[4])) {
+								def.fieldCollectionType = FieldCollectionType.tuple;
+								serviceId = 7; // ;>;
+							}
+						} else {
+							def.fieldCollectionType = FieldCollectionType.service;
+							serviceId = 1;
+
+						}
 					}
 				}
 				if (annoService == null && serviceId <= sigs.length) {
 					annoService = sigs[serviceId].substring(1).replace('/', '.');
 
 				}
-				// String service = annoService == null?
-				// member.getType().getFQN(): annoService;
-
 				def.service = annoService;
 				if (def.service == null)
 					analyzer.error("In component %s, method %s,  cannot recognize the signature of the descriptor: %s",
 							component.name, def.name, member.getDescriptor());
 
-			}
-				
-		} else {
+			} // end field
+		} else {// not a member
 			def.service = annoService;
 		}
 
 		if (component.references.containsKey(def.name))
 			analyzer.error(
 					"In component %s, multiple references with the same name: %s. Previous def: %s, this def: %s",
-					component.implementation, component.references.get(def.name), def.service, "")
-					.details(new DeclarativeServicesAnnotationError(className.getFQN(), null, null, 
+					component.implementation, component.references.get(def.name), def.service, "").details(
+					new DeclarativeServicesAnnotationError(className.getFQN(), null, null,
 							ErrorType.MULTIPLE_REFERENCES_SAME_NAME));
 		else
 			component.references.put(def.name, def);
 
+	}
+
+	private boolean sufficientGenerics(int required, int sigLength, ReferenceDef def, String sig) {
+		if (required > sigLength) {
+			analyzer.error(
+					"In component %s, method %s,  signature: %s does not have sufficient generic type information",
+					component.name, def.name, sig);
+			return false;
+		}
+		return true;
 	}
 
 	private String determineReferenceType(String methodDescriptor, ReferenceDef def, String annoService, ReferenceScope scope) {
