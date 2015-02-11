@@ -467,23 +467,44 @@ public class AnnotationReader extends ClassDataCollector {
 				if (def.name == null)
 					def.name = def.field;
 
-				String service = annoService == null? member.getType().getFQN(): annoService;
-				
-				def.service = service;
-				if (service == null)
-					analyzer.error(
-							"In component %s, method %s,  cannot recognize the signature of the descriptor: %s",
+				String sig = member.getSignature();
+				String[] sigs = sig.split("[<;>]");
+				int serviceId = 0;
+				if ("Ljava/util/Collection".equals(sigs[0]) || "Ljava/util/List".equals(sigs[0])) {
+					serviceId = 2;
+					if ("Lorg/osgi/framework/ServiceReference".equals(sigs[1]))
+						def.fieldCollectionType = FieldCollectionType.reference;
+					else if ("Lorg/osgi/framework/ServiceObjects".equals(sigs[1]))
+						def.fieldCollectionType = FieldCollectionType.serviceobjects;
+					else if ("Ljava/util/Map".equals(sigs[1]))
+						def.fieldCollectionType = FieldCollectionType.properties;
+					else if ("Ljava/util/Map$Entry".equals(sigs[1]) && "Ljava/util/Map".equals(sigs[2])
+							&& "Ljava/lang/String".equals(sigs[3]) && "Ljava/lang/Object".equals(sigs[4])) {
+						def.fieldCollectionType = FieldCollectionType.tuple;
+						serviceId = 7; // ;>;
+					} else {
+						def.fieldCollectionType = FieldCollectionType.service;
+						serviceId = 1;
+					}
+				}
+				if (annoService == null && serviceId <= sigs.length) {
+					annoService = sigs[serviceId].substring(1).replace('/', '.');
+
+				}
+				// String service = annoService == null?
+				// member.getType().getFQN(): annoService;
+
+				def.service = annoService;
+				if (def.service == null)
+					analyzer.error("In component %s, method %s,  cannot recognize the signature of the descriptor: %s",
 							component.name, def.name, member.getDescriptor());
 
-				def.fieldCollectionType = getFieldCollectionType(member);
 			}
 				
 		} else {
 			def.service = annoService;
 		}
 
-		//TODO calculate fieldComponentType
-		
 		if (component.references.containsKey(def.name))
 			analyzer.error(
 					"In component %s, multiple references with the same name: %s. Previous def: %s, this def: %s",
@@ -741,22 +762,4 @@ public class AnnotationReader extends ClassDataCollector {
 		this.extendsClass = name;
 	}
 
-	private FieldCollectionType getFieldCollectionType(FieldDef field) {
-		String sig = field.getSignature();
-		String[] sigs = sig.split("<>");
-		if ("Ljava/util/collection;".equals(sigs[0]) || "Ljava/util/List;".equals(sigs[0])) {
-			if ("Lorg/osgi/framework/ServiceReference;".equals(sigs[1]))
-				return FieldCollectionType.reference;
-			if ("Lorg/osgi/framework/ServiceObjects;".equals(sigs[1]))
-				return FieldCollectionType.serviceobjects;
-			if ("Ljava/util/Map;".equals(sigs[1]))
-				return FieldCollectionType.properties;
-			if ("Ljava/util/Map$Entry;".equals(sigs[1]))
-				return FieldCollectionType.tuple;
-			return FieldCollectionType.service;
-			
-		}
-
-		return null;
-	}
 }

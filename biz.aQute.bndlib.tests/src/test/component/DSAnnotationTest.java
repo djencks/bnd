@@ -2068,19 +2068,22 @@ public class DSAnnotationTest extends BndTestCase {
 	@Component
 	public static class TestFieldCollectionType {
 		
-		@Reference(service=LogService.class)
+		@Reference
+		// (service = LogService.class)
 		private Collection<ServiceReference<LogService>> srField;
 		
 //		@Reference(service=LogService.class)
 //		private Collection<ServiceObjects<LogService>> soField;
 		
-		@Reference(service=LogService.class)
+		@Reference(service = LogService.class)
 		private Collection<Map<String, Object>> propsField;
 		
-		@Reference(service=LogService.class)
+		@Reference
+		// (service=LogService.class)
 		private Collection<LogService> serviceField;
 		
-		@Reference(service=LogService.class)
+		@Reference
+		// (service = LogService.class)
 		private Collection<Map.Entry<Map<String, Object>, LogService>> tupleField;
 		
 	}
@@ -2099,7 +2102,26 @@ public class DSAnnotationTest extends BndTestCase {
 		r.write(System.err);
 		XmlTester xt = new XmlTester(r.openInputStream(), "scr", "http://www.osgi.org/xmlns/scr/v1.3.0");
 		xt.assertNamespace("http://www.osgi.org/xmlns/scr/v1.3.0");
-	}
 
+		xt.assertAttribute("propsField", "scr:component/reference[1]/@name");
+		xt.assertAttribute(LogService.class.getName(), "scr:component/reference[1]/@interface");
+		xt.assertAttribute("propsField", "scr:component/reference[1]/@field");
+		xt.assertAttribute("properties", "scr:component/reference[1]/@field-collection-type");
+
+		xt.assertAttribute("serviceField", "scr:component/reference[2]/@name");
+		xt.assertAttribute(LogService.class.getName(), "scr:component/reference[2]/@interface");
+		xt.assertAttribute("serviceField", "scr:component/reference[2]/@field");
+		xt.assertAttribute("service", "scr:component/reference[2]/@field-collection-type");
+
+		xt.assertAttribute("srField", "scr:component/reference[3]/@name");
+		xt.assertAttribute(LogService.class.getName(), "scr:component/reference[3]/@interface");
+		xt.assertAttribute("srField", "scr:component/reference[3]/@field");
+		xt.assertAttribute("reference", "scr:component/reference[3]/@field-collection-type");
+
+		xt.assertAttribute("tupleField", "scr:component/reference[4]/@name");
+		xt.assertAttribute(LogService.class.getName(), "scr:component/reference[4]/@interface");
+		xt.assertAttribute("tupleField", "scr:component/reference[4]/@field");
+		xt.assertAttribute("tuple", "scr:component/reference[4]/@field-collection-type");
+	}
 
 }
