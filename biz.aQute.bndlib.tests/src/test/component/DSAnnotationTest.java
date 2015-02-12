@@ -1160,6 +1160,86 @@ public class DSAnnotationTest extends BndTestCase {
 
 	}
 	
+	@Component
+	public static class CheckBinds13 {
+
+		@Reference
+		private void bindService(LogService l) {}
+
+		protected void unbindService(LogService l) {}
+
+		void updatedService(LogService l) {}
+
+		@Reference
+		private void bindSR(ServiceReference<LogService> l) {}
+
+		protected void unbindSR(ServiceReference<LogService> l) {}
+
+		void updatedSR(ServiceReference<LogService> l) {}
+
+		@Reference(service = LogService.class)
+		private void bindProps(Map<String,Object> l) {}
+
+		protected void unbindProps(Map<String,Object> l) {}
+
+		void updatedProps(Map<String,Object> l) {}
+
+		// @Reference
+		// private void bindSO(ComponentServiceObjects<LogService> l) {}
+		//
+		// protected void unbindSO(ComponentServiceObjects<LogService> l) {}
+		//
+		// void updatedSO(ComponentServiceObjects<LogService> l) {}
+
+		@Reference
+		private void bindTuple(Map.Entry<Map<String,Object>,LogService> l) {}
+
+		protected void unbindTuple(Map.Entry<Map<String,Object>,LogService> l) {}
+
+		void updatedTuple(Map.Entry<Map<String,Object>,LogService> l) {}
+
+		@Reference
+		private void bindServiceSR(LogService l, ServiceReference<LogService> l2) {}
+
+		protected void unbindServiceSR(LogService l, ServiceReference<LogService> l2) {}
+
+		void updatedServiceSR(LogService l, ServiceReference<LogService> l2) {}
+
+		@Reference
+		private void bindPropsSR(Map<String,Object> l, ServiceReference<LogService> l2) {}
+
+		protected void unbindPropsSR(Map<String,Object> l, ServiceReference<LogService> l2) {}
+
+		void updatedPropsSR(Map<String,Object> l, ServiceReference<LogService> l2) {}
+
+		@Reference
+		private void bindPropsTuple(Map<String,Object> l, Map.Entry<Map<String,Object>,LogService> l2) {}
+
+		protected void unbindPropsTuple(Map<String,Object> l, Map.Entry<Map<String,Object>,LogService> l2) {}
+
+		void updatedPropsTuple(Map<String,Object> l, Map.Entry<Map<String,Object>,LogService> l2) {}
+
+	}
+
+	public static void testBinds13() throws Exception {
+		Builder b = new Builder();
+		b.setProperty("-dsannotations", "test.component.DSAnnotationTest*CheckBinds13");
+		b.setProperty("Private-Package", "test.component");
+		b.addClasspath(new File("bin"));
+
+		Jar jar = b.build();
+		assertOk(b);
+
+		Resource r = jar.getResource("OSGI-INF/" + CheckBinds13.class.getName() + ".xml");
+		assertNotNull(r);
+		r.write(System.err);
+		XmlTester xt = new XmlTester(r.openInputStream(), "scr", "http://www.osgi.org/xmlns/scr/v1.3.0");
+
+		for (int i = 1; i <= 7; i++) {
+			xt.assertAttribute(LogService.class.getName(), "scr:component/reference[" + i + "]/@interface");
+		}
+	}
+
 	@Component(name = "NoUnbindDynamic")
 	public static class NoUnbindDynamic {
 		@SuppressWarnings("unused")

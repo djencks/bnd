@@ -42,13 +42,13 @@ public class AnnotationReader extends ClassDataCollector {
 	static Pattern				BINDNAME				= Pattern.compile("(set|add|bind)?(.*)");
 	
 	static Pattern				BINDDESCRIPTORDS10			= Pattern
-																.compile("\\(L(((org/osgi/framework/ServiceReference)|(org/osgi/framework/ServiceObjects)|(java/util/Map))|([^;]+));\\)(V|(Ljava/util/Map;))");
+																	.compile("\\(L(((org/osgi/framework/ServiceReference)|(org/osgi/service/component/ComponentServiceObjects)|(java/util/Map\\$Entry)|(java/util/Map))|([^;]+));\\)(V|(Ljava/util/Map;))");
 	static Pattern				BINDDESCRIPTORDS11			= Pattern
 																.compile("\\(L([^;]+);(Ljava/util/Map;)?\\)(V|(Ljava/util/Map;))");
 
 	//includes support for felix extensions
 	static Pattern				BINDDESCRIPTORDS13			= Pattern
-																.compile("\\(((Lorg/osgi/framework/ServiceReference;)|(Lorg/osgi/framework/ServiceObjects;)|(Ljava/util/Map;)|(L([^;]+);))+\\)(V|(Ljava/util/Map;))");
+																	.compile("\\(((Lorg/osgi/framework/ServiceReference;)|(Lorg/osgi/service/component/ComponentServiceObjects;)|(Ljava/util/Map;)|(Ljava/util/Map\\$Entry;)|(L([^;]+);))+\\)(V|(Ljava/util/Map;))");
 
 	static Pattern				LIFECYCLEDESCRIPTORDS10		= Pattern
 																.compile("\\((Lorg/osgi/service/component/ComponentContext;)\\)(V|(Ljava/util/Map;))");
@@ -150,7 +150,7 @@ public class AnnotationReader extends ClassDataCollector {
 
 		if (methods.containsKey(value)) {
 			for (String descriptor : methods.get(value)) {
-				String service = determineReferenceType(descriptor, rdef, rdef.service, rdef.scope);
+				String service = determineReferenceType(descriptor, rdef, rdef.service, null);
 				if (service != null)
 					return value;
 			}
@@ -428,7 +428,7 @@ public class AnnotationReader extends ClassDataCollector {
 			String error = Verifier.validateFilter(def.target);
 			if (error != null)
 				analyzer.error("Invalid target filter %s for %s: %s", def.target, def.name, error).details(
-						new DeclarativeServicesAnnotationError(className.getFQN(), def.bind, def.bindDescriptor,
+						new DeclarativeServicesAnnotationError(className.getFQN(), def.bind, null,
 								ErrorType.INVALID_TARGET_FILTER));
 		}
 
@@ -438,6 +438,7 @@ public class AnnotationReader extends ClassDataCollector {
 
 		if (member != null) {
 			if (member instanceof MethodDef) {
+				def.bindDescriptor = member.getDescriptor().toString();
 				if (!(member.isProtected() || member.isPublic()))
 					def.updateVersion(V1_1);
 				def.bind = member.getName();
@@ -447,16 +448,13 @@ public class AnnotationReader extends ClassDataCollector {
 						def.name = m.group(2);
 					else
 						analyzer.error("Invalid name for bind method %s", member.getName()).details(
-								new DeclarativeServicesAnnotationError(className.getFQN(), member.getName(), member
-										.getDescriptor().toString(), ErrorType.INVALID_REFERENCE_BIND_METHOD_NAME));
+								new DeclarativeServicesAnnotationError(className.getFQN(), member.getName(),
+										def.bindDescriptor, ErrorType.INVALID_REFERENCE_BIND_METHOD_NAME));
 				}
-				def.bindDescriptor = member.getDescriptor().toString();
 
+				def.service = determineReferenceType(def.bindDescriptor, def, annoService, member.getSignature());
 
-				String service = determineReferenceType(member.getDescriptor().toString(), def, annoService, def.scope);
-
-				def.service = service;
-				if (service == null)
+				if (def.service == null)
 					analyzer.error(
 							"In component %s, method %s,  cannot recognize the signature of the descriptor: %s",
 							component.name, def.name, member.getDescriptor());
@@ -541,8 +539,9 @@ public class AnnotationReader extends ClassDataCollector {
 		return true;
 	}
 
-	private String determineReferenceType(String methodDescriptor, ReferenceDef def, String annoService, ReferenceScope scope) {
+	private String determineReferenceType(String methodDescriptor, ReferenceDef def, String annoService, String signature) {
 		String inferredService = null;
+		String plainType = null;
 		boolean hasMapReturnType;
 		// We have to find the type of the current method to
 		// link it to the referenced service.
@@ -550,11 +549,22 @@ public class AnnotationReader extends ClassDataCollector {
 		if (m.matches()) {
 			inferredService = Descriptors.binaryToFQN(m.group(1));
 			if (m.group(3) == null && noMatch(annoService, inferredService)) { //ServiceReference is always OK, match is always OK
-				if (m.group(6) == null) {
+				if (m.group(7) == null) {
 					def.updateVersion(V1_3); // single arg, Map or ServiceObjects, and it's not the service type, so we must be V3.
 				} //if the type is specified it may still not match as it could be a superclass of the specified service.
 			}
-			hasMapReturnType = m.group(8) != null;
+			if (annoService == null)
+				if (m.group(3) != null) {
+					plainType = "Lorg/osgi/framework/ServiceReference<";
+					inferredService = null;
+				} else if (m.group(4) != null) {
+					plainType = "Lorg/osgi/service/component/ComponentServiceObjects<";
+					inferredService = null;
+				} else if (m.group(5) != null) {
+					plainType = "Ljava/util/Map$Entry<Ljava/util/Map<Ljava/lang/String;Ljava/lang/Object;>;";
+					inferredService = null;
+				}
+			hasMapReturnType = m.group(9) != null;
 		} else {
 			m = BINDDESCRIPTORDS11.matcher(methodDescriptor);
 			if (m.matches()) {
@@ -564,16 +574,24 @@ public class AnnotationReader extends ClassDataCollector {
 			} else {
 				m = BINDDESCRIPTORDS13.matcher(methodDescriptor);
 				if (m.matches()) {
-					inferredService = m.group(6);
+					inferredService = m.group(7);
 					if (inferredService != null)
 						inferredService = Descriptors.binaryToFQN(inferredService);
 					def.updateVersion(V1_3);
-					if (!ReferenceScope.PROTOTYPE.equals(scope) && m.group(3) != null) {
+					if (!ReferenceScope.PROTOTYPE.equals(def.scope) && m.group(3) != null) {
 						analyzer.error(
 								"In component %s, to use ServiceObjects the scope must be 'prototype'",
 								component.implementation, "");				
 					}
-					hasMapReturnType = m.group(8) != null;
+					if (annoService == null)
+						if (m.group(2) != null)
+							plainType = "Lorg/osgi/framework/ServiceReference<";
+						else if (m.group(3) != null)
+							plainType = "Lorg/osgi/service/component/ComponentServiceObjects<";
+						else if (m.group(5) != null)
+							plainType = "Ljava/util/Map$Entry<Ljava/util/Map<Ljava/lang/String;Ljava/lang/Object;>;";
+
+					hasMapReturnType = m.group(9) != null;
 				} else { 
 					return null;
 				}
@@ -584,6 +602,16 @@ public class AnnotationReader extends ClassDataCollector {
 		String service = annoService;
 		if (service == null) 
 			service = inferredService;
+		if (service == null && signature != null && plainType != null) {
+			int start = signature.indexOf(plainType);
+			if (start > -1) {
+				start += plainType.length();
+				String[] sigs = signature.substring(start).split("[<;>]");
+				if (sigs.length > 0) {
+					service = sigs[0].substring(1).replace('/', '.');
+				}
+			}
+		}
 		return service;
 	}
 
