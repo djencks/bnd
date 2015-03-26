@@ -247,9 +247,6 @@ public class OCDReader extends ClassDataCollector {
 
 
 	private String valueToProperty(Object value, boolean isClass) {
-		if (isClass) {
-			value = Clazz.objectDescriptorToFQN((String) value);
-		}
 		return value.toString();
 	}
 	

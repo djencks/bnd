@@ -60,7 +60,7 @@ public class MetatypeAnnotations implements AnalyzerPlugin {
 								analyzer.error("Duplicate pid %s from class %s", dDef.pid, c.getFQN());
 							}
 						}
-						classToOCDMap.put(c.getClassName().getBinary(), definition);
+						classToOCDMap.put(c.getClassName().getFQN(), definition);
 						String name = "OSGI-INF/metatype/" + analyzer.validResourcePath(definition.id, "Invalid resource name") + ".xml";
 						analyzer.getJar().putResource(name, new TagResource(definition.getTag()));
 					}

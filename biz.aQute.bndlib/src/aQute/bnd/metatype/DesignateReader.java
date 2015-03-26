@@ -43,7 +43,7 @@ public class DesignateReader extends ClassDataCollector {
 			}
 			String pid = pids[0];
 			String ocdClass = ((String) designate.get("ocd"));
-			ocdClass = ocdClass.substring(1, ocdClass.length() - 1);
+			// ocdClass = ocdClass.substring(1, ocdClass.length() - 1);
 			OCDDef ocd = classToOCDMap.get(ocdClass);
 			if (ocd == null) {
 				analyzer.error(

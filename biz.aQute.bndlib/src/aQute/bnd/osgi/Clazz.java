@@ -1560,7 +1560,7 @@ public class Clazz {
 						api.add(name.getPackageRef());
 					}
 				}
-				return pool[class_info_index];
+				return objectDescriptorToFQN((String) pool[class_info_index]);
 
 			case '@' : // Annotation type
 				return doAnnotation(in, member, policy, collect, access_flags);

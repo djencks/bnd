@@ -96,14 +96,14 @@ public class ComponentAnnotationReader extends ClassDataCollector {
 			if (annotation.get(Component.DESIGNATE) != null) {
 				String configs = annotation.get(Component.DESIGNATE);
 				if (configs != null) {
-					set(COMPONENT_DESIGNATE, Clazz.objectDescriptorToFQN(configs), "");
+					set(COMPONENT_DESIGNATE, configs, "");
 				}
 			}
 
 			if (annotation.get(Component.DESIGNATE_FACTORY) != null) {
 				String configs = annotation.get(Component.DESIGNATE_FACTORY);
 				if (configs != null) {
-					set(COMPONENT_DESIGNATEFACTORY, Clazz.objectDescriptorToFQN(configs), "");
+					set(COMPONENT_DESIGNATEFACTORY, configs, "");
 				}
 			}
 
@@ -133,7 +133,7 @@ public class ComponentAnnotationReader extends ClassDataCollector {
 				// We have explicit interfaces set
 				p = new String[provides.length];
 				for (int i = 0; i < provides.length; i++) {
-					p[i] = descriptorToFQN(provides[i].toString());
+					p[i] = provides[i].toString();
 				}
 			}
 			if (p.length > 0) {
@@ -213,9 +213,7 @@ public class ComponentAnnotationReader extends ClassDataCollector {
 			}
 			String service = annotation.get(Reference.SERVICE);
 
-			if (service != null) {
-				service = Clazz.objectDescriptorToFQN(service);
-			} else {
+			if (service == null) {
 				// We have to find the type of the current method to
 				// link it to the referenced service.
 				Matcher m = BINDDESCRIPTOR.matcher(method.getDescriptor().toString());

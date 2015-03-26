@@ -400,9 +400,6 @@ public class AnnotationReader extends ClassDataCollector {
 							}
 
 							private void valueToProperty(String name, Object value, boolean isClass, boolean isCharacter) {
-								if (isClass) {
-									value = Clazz.objectDescriptorToFQN((String) value);
-								}
 								Class<?> typeClass = isCharacter? Character.class: value.getClass();
 								//enums already come out as the enum name, no processing needed.
 								String type = typeClass.getSimpleName();
@@ -481,8 +478,6 @@ public class AnnotationReader extends ClassDataCollector {
 		}
 
 		String annoService = raw.get("service");
-		if (annoService != null) 
-			annoService = Clazz.objectDescriptorToFQN(annoService);
 
 		if (member != null) {
 			if (member instanceof MethodDef) {
